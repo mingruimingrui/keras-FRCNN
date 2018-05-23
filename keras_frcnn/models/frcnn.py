@@ -6,6 +6,121 @@ import keras
 from .. import layers
 
 
+def default_classification_model(
+    num_classes,
+    num_anchors,
+    pyramid_feature_size        = 256,
+    classification_feature_size = 256,
+    prior_probability           = 0.01,
+    name                        = 'classification_submodel'
+):
+    """Creates a default classification model
+
+    Args
+        num_classes                 : Number of classes to predict a score for at each feature level
+        num_anchors                 : Number of anchors to predict classification scores for at each feature level
+        pyramid_feature_size        : The number of filters to expect from the feature pyramid levels
+        classification_feature_size : The number of filters to use in the layers in the classification submodel
+        name                        : The name of the submodel
+
+    Returns
+        A keras.models.Model that predicts classes for each anchor
+
+    """
+    options = {
+        'kernel_size' : 3,
+        'strides'     : 1,
+        'padding'     : 'same',
+    }
+
+    inputs  = keras.layers.Input(shape=(None, None, pyramid_feature_size))
+    outputs = inputs
+    for i in range(4):
+        outputs = keras.layers.Conv2D(
+            filters=classification_feature_size,
+            activation='relu',
+            name='pyramid_classification_{}'.format(i),
+            kernel_initializer=keras.initializers.normal(mean=0.0, stddev=0.01, seed=None),
+            bias_initializer='zeros',
+            **options
+        )(outputs)
+
+    outputs = keras.layers.Conv2D(
+        filters=num_classes * num_anchors,
+        kernel_initializer=keras.initializers.zeros(),
+        bias_initializer=keras.initializers.Constant(value=-np.log((1 - prior_probability) / prior_probability)),
+        # bias_initializer=initializers.PriorProbability(probability=prior_probability),
+        name='pyramid_classification',
+        **options
+    )(outputs)
+
+    # reshape output and apply sigmoid
+    outputs = keras.layers.Reshape((-1, num_classes), name='pyramid_classification_reshape')(outputs)
+    outputs = keras.layers.Activation('sigmoid', name='pyramid_classification_sigmoid')(outputs)
+
+    return keras.models.Model(inputs=inputs, outputs=outputs, name=name)
+
+
+def default_regression_model(
+    num_anchors,
+    pyramid_feature_size=256,
+    regression_feature_size=256,
+    name='regression_submodel'
+):
+    """ Creates the default regression submodel.
+
+    Args
+        num_anchors             : Number of anchors to regress for each feature level
+        pyramid_feature_size    : The number of filters to expect from the feature pyramid levels
+        regression_feature_size : The number of filters to use in the layers in the regression submodel
+        name                    : The name of the submodel
+
+    Returns
+        A keras.models.Model that predicts regression values for each anchor
+
+    """
+    # All new conv layers except the final one in the
+    # RetinaNet (classification) subnets are initialized
+    # with bias b = 0 and a Gaussian weight fill with stddev = 0.01.
+    options = {
+        'kernel_size'        : 3,
+        'strides'            : 1,
+        'padding'            : 'same',
+        'kernel_initializer' : keras.initializers.normal(mean=0.0, stddev=0.01, seed=None),
+        'bias_initializer'   : 'zeros'
+    }
+
+    inputs  = keras.layers.Input(shape=(None, None, pyramid_feature_size))
+    outputs = inputs
+    for i in range(4):
+        outputs = keras.layers.Conv2D(
+            filters=regression_feature_size,
+            activation='relu',
+            name='pyramid_regression_{}'.format(i),
+            **options
+        )(outputs)
+
+    outputs = keras.layers.Conv2D(num_anchors * 4, name='pyramid_regression', **options)(outputs)
+    outputs = keras.layers.Reshape((-1, 4), name='pyramid_regression_reshape')(outputs)
+
+    return keras.models.Model(inputs=inputs, outputs=outputs, name=name)
+
+
+def __apply_model(model, features, name):
+    """Applies a single submodel to each FPN level
+
+    Args
+        model    : The submodel to evaluate
+        features : The FPN features
+        name     : Name of the submodel
+
+    Returns
+        A tensor containing the response from the submodel on the FPN features
+
+    """
+    return keras.layers.Concatenate(axis=1)([model(f) for f in features])
+
+
 def __build_anchors(
     features,
     sizes   = [32, 64, 128, 256, 512],
@@ -46,7 +161,6 @@ def __build_anchors(
     num_anchors = len(ratios) * len(scales)
 
     return anchors, num_anchors
-
 
 
 def __build_pyramid_features(C3, C4, C5, feature_size=256):
@@ -99,31 +213,48 @@ def load_backbone(input_tensor, backbone_name='inception_v3'):
     return backbone
 
 
-def FRCNN(
-    # More kwargs in the future
-    # num_classes,
-    input_tensor  = None,
-    name          = 'frcnn',
-    backbone_name = 'inception_v3'
-):
-    """build a Faster-RCNN model"""
+def FRCNN(config):
+    """build a Faster-RCNN model
 
-    if input_tensor is None:
-        input_tensor = keras.layers.Input(shape=(None, None, 3))
+    Args
+        refer to keras_frcnn/models/config.py
 
-    backbone = load_backbone(input_tensor, backbone_name=backbone_name)
+    Returns
+        A retinanet model based on your model specifications
+
+    """
+
+    # Get input_tensor
+    input = config.get_input_tensor()
 
     # Generate pyramid features
+    backbone = load_backbone(input, backbone_name=config.backbone_name)
     C3, C4, C5 = backbone.output
-    P3, P4, P5, P6, P7 = __build_pyramid_features(C3, C4, C5)
-    features = [P3, P4, P5, P6, P7]
+    features = __build_pyramid_features(C3, C4, C5)
 
+    # Build anchors
     anchors, num_anchors = __build_anchors(features)
-    # classification =
-    # regression =
+
+    # Create classification and regression models
+    classification_model = default_classification_model(config.num_classes, num_anchors)
+    regression_model     = default_regression_model(num_anchors)
+
+    # Calculate classification and regression
+    classification = __apply_model(classification_model, features, name='classification')
+    regression     = __apply_model(regression_model    , features, name='regression'    )
+
+    # Apply predicted regression to anchors
+    boxes = layers.RegressBoxes(name='boxes')([anchors, regression])
+    boxes = layers.ClipBoxes(name='clipped_boxes')([input, boxes])
+
+    # Calculate detections
+    detections = layers.FilterDetections(name='nms')([boxes, classification])
+
+    # Define outputs
+    outputs = detections
 
     return keras.Model(
-        inputs  = input_tensor,
-        outputs = [anchors]
+        inputs  = input,
+        outputs = outputs,
+        name    = config.name
     )
-    return features, anchors

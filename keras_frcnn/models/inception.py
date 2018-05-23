@@ -1,9 +1,9 @@
 import keras
 
-def inception_backbone():
+def inception_backbone(input_tensor):
     """Loads an inception v3 model"""
 
-    inception_model = keras.applications.inception_v3.InceptionV3(include_top=False, input_shape=(299,299, 3))
+    inception_model = keras.applications.inception_v3.InceptionV3(include_top=False, input_tensor=input_tensor)
 
     layer_names = [l.name for l in inception_model.layers]
     mix_layers = list(filter(lambda l: 'mixed'      in l, layer_names))

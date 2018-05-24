@@ -4,7 +4,7 @@ assert keras.backend.backend() in ['tensorflow'], 'Only tensorflow supported cur
 
 # Import backend functions based on your keras-backend
 if keras.backend.backend() == 'tensorflow':
-    from .tensorflow_backend import *
+    from ._tensorflow_backend import *
 
 # Here we have some commonly defined custom backend functions
 def shift(shape, stride, anchors):

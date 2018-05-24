@@ -1,16 +1,27 @@
 import keras
 
-def inception_backbone(input_tensor):
-    """Loads an inception v3 model"""
 
+def InceptionV3(input_tensor, freeze_backbone=False):
+    """Loads an inception v3 model without top"""
     inception_model = keras.applications.inception_v3.InceptionV3(include_top=False, input_tensor=input_tensor)
 
-    layer_names = [l.name for l in inception_model.layers]
-    mix_layers = list(filter(lambda l: 'mixed'      in l, layer_names))
+    if freeze_backbone:
+        for layer in inception_model.layers:
+            layer.trainable = False
 
-    C1 = inception_model.get_layer(mix_layers[ 2]).output
-    C2 = inception_model.get_layer(mix_layers[ 7]).output
-    C3 = inception_model.get_layer(mix_layers[10]).output
+    return inception_model
+
+
+def InceptionBackbone(input_tensor, freeze_backbone=False):
+    """Loads an inception v3 model as a backbone"""
+    inception_model = InceptionV3(input_tensor, freeze_backbone=freeze_backbone)
+
+    layer_names = [l.name for l in inception_model.layers]
+    mix_layer_names = [l for l in layer_names if 'mixed' in l]
+
+    C1 = inception_model.get_layer(mix_layer_names[ 2]).output
+    C2 = inception_model.get_layer(mix_layer_names[ 7]).output
+    C3 = inception_model.get_layer(mix_layer_names[10]).output
 
     backbone = keras.Model(
         inputs = inception_model.input,

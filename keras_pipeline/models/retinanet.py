@@ -118,7 +118,7 @@ def __apply_model(model, features, name):
         A tensor containing the response from the submodel on the FPN features
 
     """
-    return keras.layers.Concatenate(axis=1)([model(f) for f in features])
+    return keras.layers.Concatenate(axis=1, name=name)([model(f) for f in features])
 
 
 def __build_anchors(
@@ -158,9 +158,8 @@ def __build_anchors(
         anchors.append(anchor)
 
     anchors = keras.layers.Concatenate(axis=1, name='anchors')(anchors)
-    num_anchors = len(ratios) * len(scales)
 
-    return anchors, num_anchors
+    return anchors
 
 
 def __build_pyramid_features(C3, C4, C5, feature_size=256):
@@ -203,45 +202,73 @@ def __build_pyramid_features(C3, C4, C5, feature_size=256):
     return P3, P4, P5, P6, P7
 
 
-def load_backbone(input_tensor, backbone_name='inception_v3'):
+def load_backbone(input_tensor, backbone_name='inception_v3', freeze_backbone=False):
     assert backbone_name in ['inception_v3'], 'Only inception model support currently'
 
     if backbone_name == 'inception_v3':
-        from .inception import inception_backbone
-        backbone = inception_backbone(input_tensor)
+        from .inception import InceptionBackbone
+        backbone = InceptionBackbone(input_tensor, freeze_backbone=freeze_backbone)
 
     return backbone
 
 
-def FRCNN(config):
-    """build a Faster-RCNN model
+def RetinaNetTrain(config):
+    """ Build a retinanet model for training
 
     Args
-        refer to keras_frcnn/models/config.py
+        config - A RetinaNetConfig object, refer to
+                 keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
     Returns
         A retinanet model based on your model specifications
 
     """
-
     # Get input_tensor
     input = config.get_input_tensor()
 
     # Generate pyramid features
-    backbone = load_backbone(input, backbone_name=config.backbone_name)
+    backbone = load_backbone(input, backbone_name=config.backbone_name, freeze_backbone=config.freeze_backbone)
     C3, C4, C5 = backbone.output
     features = __build_pyramid_features(C3, C4, C5)
 
-    # Build anchors
-    anchors, num_anchors = __build_anchors(features)
-
     # Create classification and regression models
-    classification_model = default_classification_model(config.num_classes, num_anchors)
-    regression_model     = default_regression_model(num_anchors)
+    classification_model = default_classification_model(config.num_classes, config.get_num_anchors())
+    regression_model     = default_regression_model(config.get_num_anchors())
 
-    # Calculate classification and regression
+    # Build anchors and calculate classification and regression
     classification = __apply_model(classification_model, features, name='classification')
     regression     = __apply_model(regression_model    , features, name='regression'    )
+
+    outputs = [classification, regression]
+
+    return keras.Model(
+        inputs  = input,
+        outputs = outputs,
+        name    = config.name
+    )
+
+
+def RetinaNet(config):
+    """ Build a retinanet model
+
+    Args
+        config - A RetinaNetConfig object, refer to
+                 keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
+
+    Returns
+        A retinanet model based on your model specifications
+
+    """
+    # This maybe seems unintuitive, but the prediction model is built on top a of a train model
+    model = RetinaNetTrain(config)
+
+    # Extract input and pyramid level features from the model
+    input = model.input
+    features = [model.get_layer(l).output for l in ('P3', 'P4', 'P5', 'P6', 'P7')]
+
+    # Get anchors, classification and regression
+    anchors = __build_anchors(features)
+    classification, regression = model.output
 
     # Apply predicted regression to anchors
     boxes = layers.RegressBoxes(name='boxes')([anchors, regression])

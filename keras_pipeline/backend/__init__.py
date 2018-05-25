@@ -8,7 +8,8 @@ if keras.backend.backend() == 'tensorflow':
 
 # Here we have some commonly defined custom backend functions
 def shift(shape, stride, anchors):
-    """Produce shifted anchors based on shape of the map and stride size
+    """ Produce shifted anchors based on shape of the map and stride size
+    This is for Tensors
     """
     shift_x = (keras.backend.arange(0, shape[1], dtype=keras.backend.floatx()) + keras.backend.constant(0.5, dtype=keras.backend.floatx())) * stride
     shift_y = (keras.backend.arange(0, shape[0], dtype=keras.backend.floatx()) + keras.backend.constant(0.5, dtype=keras.backend.floatx())) * stride

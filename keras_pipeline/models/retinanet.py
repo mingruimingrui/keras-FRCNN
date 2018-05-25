@@ -4,7 +4,6 @@ import numpy as np
 
 import keras
 from .. import layers
-from .. import losses
 
 
 def default_classification_model(
@@ -257,13 +256,12 @@ def RetinaNetTrain(config):
         name    = config.name
     )
 
-    # Compile model
     training_model.compile(
-        loss={
-            'regression'    : losses.make_detection_smooth_l1_loss(),
-            'classification': losses.make_detection_focal_loss()
+        loss = {
+            'classification': config.classification_loss,
+            'regression'    : config.regression_loss
         },
-        optimizer=keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
+        optimizer = config.optimizer
     )
 
     return training_model

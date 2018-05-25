@@ -1,6 +1,7 @@
 import sys
-import inspect
 import numpy as np
+
+import inspect
 from collections import OrderedDict
 
 
@@ -98,21 +99,21 @@ class ConfigTemplate:
 
         for param_name, param_reqs in self.__params__.items():
             if param_reqs['required']:
-                print('\n    Parameter name - {} (required)'.format(param_name))
+                print('\n    ==== Param_name - {} (required) ===='.format(param_name))
             else:
-                print('\n    Parameter name - {}'.format(param_name))
+                print('\n    ==== Param_name - {} ===='.format(param_name))
 
-            print('    Description    - {}'.format(param_reqs['desc']))
-            print('    Default        - {}'.format(param_reqs['default']))
+            print('    Description     - {}'.format(param_reqs['desc']))
+            print('    Default         - {}'.format(param_reqs['default']))
 
             if param_reqs['accepted_types'] is not None:
-                print('    Accepted types - {}'.format(param_reqs['accepted_types']))
+                print('    Accepted types  - {}'.format(param_reqs['accepted_types']))
 
             if param_reqs['valid_options'] is not None:
-                print('    Valid options  - {}'.format(param_reqs['valid_options']))
+                print('    Valid options   - {}'.format(param_reqs['valid_options']))
 
             if param_reqs['condition']:
-                print('    Condition      -')
+                print('    Condition       -')
                 # print(inspect.getsource(param_reqs['condition']))
                 print_condition(param_reqs['condition'])
             else:

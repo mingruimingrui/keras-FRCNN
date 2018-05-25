@@ -135,7 +135,7 @@ def __build_anchors(
         sizes       : List of sizes to use. Each size corresponds to one feature level
         strides     : List of strides to use. Each stride corresponds to one feature level
         ratios      : List of ratios to use per location in a feature map
-        scales      : LIst of scales to use per location in a feature map
+        scales      : List of scales to use per location in a feature map
 
     Returns
         anchors     : Tensor representing anchors generated from features
@@ -220,7 +220,7 @@ def RetinaNetTrain(config):
                  keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
     Returns
-        A retinanet model based on your model specifications
+        A retinanet model that returns classification and regression for your defined anchors
 
     """
     # Get input_tensor
@@ -228,18 +228,24 @@ def RetinaNetTrain(config):
 
     # Generate pyramid features
     backbone = load_backbone(input, backbone_name=config.backbone_name, freeze_backbone=config.freeze_backbone)
-    C3, C4, C5 = backbone.output
+    _, _, C3, C4, C5 = backbone.output
     features = __build_pyramid_features(C3, C4, C5, feature_size=config.pyramid_feature_size)
 
     # Create classification and regression models
     classification_model = default_classification_model(
         num_classes                 = config.num_classes,
-        num_anchors                 = config.num_anchors,
+        num_anchors                 = config.get_num_anchors(),
         pyramid_feature_size        = config.pyramid_feature_size,
         classification_feature_size = config.classification_feature_size
     )
 
     regression_model     = default_regression_model(config.get_num_anchors())
+
+    default_regression_model(
+        num_anchors             = config.get_num_anchors(),
+        pyramid_feature_size    = config.pyramid_feature_size,
+        regression_feature_size = config.regression_feature_size
+    )
 
     # Build anchors and calculate classification and regression
     classification = __apply_model(classification_model, features, name='classification')
@@ -255,14 +261,14 @@ def RetinaNetTrain(config):
 
 
 def RetinaNet(config):
-    """ Build a retinanet model
+    """ Build a retinanet model for inference
 
     Args
         config - A RetinaNetConfig object, refer to
                  keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
     Returns
-        A retinanet model based on your model specifications
+        A retinanet model that returns detections
 
     """
     # This maybe seems unintuitive, but the prediction model is built on top a of a train model

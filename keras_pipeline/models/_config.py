@@ -78,6 +78,14 @@ class RetinaNetConfig(ModelConfigTemplate):
             condition = lambda x: x > 0
         )
 
+        self.add(
+            'regression_feature_size',
+            'Number of features used in anchor regression layers',
+            default = 256,
+            accepted_types = 'int-like',
+            condition = lambda x: x > 0
+        )
+
         self._check_valid(**kwargs)
 
 

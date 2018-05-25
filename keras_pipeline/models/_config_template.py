@@ -47,6 +47,11 @@ class ModelConfigTemplate:
 
     def check_valid(self, **kwargs):
         for param_name, param_reqs in self.__params__.items():
+            # Ensure that parameter name is valid
+            assert not hasattr(self, param_name), \
+                '{} is a repeated param or there might be some problems with the code'.format(param_name) + \
+                '\nplease contact the developer'
+
             # Check if user provided value for parameter
             if param_name in kwargs:
                 param_val = kwargs[param_name]
@@ -107,12 +112,24 @@ class ModelConfigTemplate:
         print('\n*** End of Parameter Guide ***')
 
 
+    def to_dict(self):
+        param_dict = {}
+
+        for param_name, param_reqs in self.__params__.items():
+            param_dict[param_name] = getattr(self, param_name)
+
+        return param_dict
+
+
 def check_accpted_types(accepted_types, param_val):
+    if not is_list_like(accepted_types):
+        accepted_types = [accepted_types]
+
     if isinstance(param_val,
-        tuple(at for at in (accepted_types) if isinstance(at, type))):
+        tuple(at for at in accepted_types if isinstance(at, type))):
         return True
 
-    for at in (at for at in (accepted_types) if not isinstance(at, type)):
+    for at in (at for at in accepted_types if not isinstance(at, type)):
         if at == 'int-like':
             if is_int_like(param_val):
                 return True

@@ -14,13 +14,13 @@ class RetinaNetConfig(ModelConfigTemplate):
             'name',
             'Name of your model',
             default = 'retinanet',
-            accpted_types = str
+            accepted_types = str
         )
 
         self.add(
             'num_classes',
             'Number of classes',
-            accpted_types = 'int-like',
+            accepted_types = 'int-like',
             condition = lambda x: x > 0,
             required = True
         )
@@ -40,7 +40,7 @@ class RetinaNetConfig(ModelConfigTemplate):
 
         self.add(
             'input_tensor',
-            'Tensor as an input',
+            'Tensor as an input (overwrites input_shape)',
             condition = is_input_tensor_valid
         )
 
@@ -86,7 +86,36 @@ class RetinaNetConfig(ModelConfigTemplate):
             condition = lambda x: x > 0
         )
 
+        self.add(
+            'anchor_sizes',
+            'List of size of anchor',
+            default = [32, 64, 128, 256, 512],
+            accepted_types = 'list-like'
+        )
+
+        self.add(
+            'anchor_strides',
+            'List of strides of anchor (needs to be the same length)',
+            default = [8, 16, 32, 64, 128],
+            accepted_types = 'list-like'
+        )
+
+        ratios  = [0.5, 1., 2.],
+        scales  = [2. ** 0., 2. ** (1. / 3.), 2. ** (2. / 3.)],
+
+        self.add(
+            'anchor_ratios',
+            'List of ratios that anchor are generated wrt a window',
+            default = [0.5, 1., 2.],
+            accepted_types = 'list-like'
+        )
+
         self._check_valid(**kwargs)
+        self._additional_checks()
+
+
+    def _additional_checks(self):
+        assert len(self.anchor_sizes) == len(self.anchor_strides)
 
 
     def get_input_tensor(self):

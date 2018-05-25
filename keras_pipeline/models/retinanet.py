@@ -239,9 +239,7 @@ def RetinaNetTrain(config):
         classification_feature_size = config.classification_feature_size
     )
 
-    regression_model     = default_regression_model(config.get_num_anchors())
-
-    default_regression_model(
+    regression_model = default_regression_model(
         num_anchors             = config.get_num_anchors(),
         pyramid_feature_size    = config.pyramid_feature_size,
         regression_feature_size = config.regression_feature_size

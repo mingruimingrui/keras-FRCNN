@@ -30,6 +30,10 @@ class ModelConfigTemplate:
         """
         self.__params__[name] = {'desc': desc}
 
+        for kwarg in kwargs:
+            assert kwarg in ['default', 'accepted_types', 'valid_options', 'condition', 'required'], \
+                '{} is not a valid add kwarg'.format(kwarg)
+
         for kwarg in ['default', 'accepted_types', 'valid_options', 'condition', 'required']:
             if kwarg in kwargs:
                 self.__params__[name][kwarg] = kwargs[kwarg]

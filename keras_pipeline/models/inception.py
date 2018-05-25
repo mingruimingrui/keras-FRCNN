@@ -16,8 +16,8 @@ def InceptionBackbone(input_tensor, freeze_backbone=False):
     """Loads an inception v3 model as a backbone"""
     inception_model = InceptionV3(input_tensor, freeze_backbone=freeze_backbone)
 
-    mix_layer_names  = [l.name for l in model.layers if 'mixed'  in l.name]
-    conv_layer_names = [l.name for l in model.layers if 'conv2d' in l.name]
+    mix_layer_names  = [l.name for l in inception_model.layers if 'mixed'  in l.name]
+    conv_layer_names = [l.name for l in inception_model.layers if 'conv2d' in l.name]
 
     layer_names = [l.name for l in inception_model.layers]
     mix_layer_names = [l for l in layer_names if 'mixed' in l]

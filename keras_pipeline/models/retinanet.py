@@ -229,10 +229,16 @@ def RetinaNetTrain(config):
     # Generate pyramid features
     backbone = load_backbone(input, backbone_name=config.backbone_name, freeze_backbone=config.freeze_backbone)
     C3, C4, C5 = backbone.output
-    features = __build_pyramid_features(C3, C4, C5)
+    features = __build_pyramid_features(C3, C4, C5, feature_size=config.pyramid_feature_size)
 
     # Create classification and regression models
-    classification_model = default_classification_model(config.num_classes, config.get_num_anchors())
+    classification_model = default_classification_model(
+        num_classes                 = config.num_classes,
+        num_anchors                 = config.num_anchors,
+        pyramid_feature_size        = config.pyramid_feature_size,
+        classification_feature_size = config.classification_feature_size
+    )
+
     regression_model     = default_regression_model(config.get_num_anchors())
 
     # Build anchors and calculate classification and regression

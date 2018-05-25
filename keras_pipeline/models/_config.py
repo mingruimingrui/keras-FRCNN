@@ -44,6 +44,8 @@ class RetinaNetConfig(ModelConfigTemplate):
             condition = is_input_tensor_valid
         )
 
+        # Backbone Config
+
         self.add(
             'backbone_name',
             'Loads a backbone based on a name',
@@ -56,6 +58,24 @@ class RetinaNetConfig(ModelConfigTemplate):
             'Freezes the backbone weights during training',
             default = False,
             accepted_types = bool
+        )
+
+        # Model Config
+
+        self.add(
+            'pyramid_feature_size',
+            'Number of features at the pyramid level',
+            default = 256,
+            accepted_types = 'int-like',
+            condition = lambda x: x > 0
+        )
+
+        self.add(
+            'classification_feature_size',
+            'Number of features used in classification layers',
+            default = 256,
+            accepted_types = 'int-like',
+            condition = lambda x: x > 0
         )
 
         self._check_valid(**kwargs)

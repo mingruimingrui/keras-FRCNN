@@ -1,1 +1,1 @@
-from _detection_losses import make_detection_focal_loss, make_detection_smooth_l1_loss
+from ._detection_losses import make_detection_focal_loss, make_detection_smooth_l1_loss

@@ -1,17 +1,21 @@
 import sys
 import inspect
 import numpy as np
+from collections import OrderedDict
 
 
-class ModelConfigTemplate:
-    def __init__(self, **kwargs):
+class ConfigTemplate:
+    def __init__(self, help=False, **kwargs):
         self.__name__ = 'ModelConfigTemplate'
-        self.__params__ = {}
+        self.__params__ = OrderedDict()
 
         """Place all your self.add here and remove Error"""
         raise NotImplementedError('__init__ not implemented')
 
-        self.check_valid(**kwargs)
+        if help:
+            self.help()
+        else:
+            self._validate_kwargs_(**kwargs)
 
 
     def add(self, name, desc, **kwargs):
@@ -41,15 +45,15 @@ class ModelConfigTemplate:
                 self.__params__[name][kwarg] = None
 
 
-    def _check_valid(self, **kwargs):
+    def _validate_kwargs_(self, **kwargs):
         try:
-            self.check_valid(**kwargs)
+            self._validate_kwargs(**kwargs)
         except Exception as e:
             self.help()
             sys.exit('AssertionError: ' + str(e))
 
 
-    def check_valid(self, **kwargs):
+    def _validate_kwargs(self, **kwargs):
         for param_name, param_reqs in self.__params__.items():
             # Ensure that parameter name is valid
             assert not hasattr(self, param_name), \
@@ -109,7 +113,8 @@ class ModelConfigTemplate:
 
             if param_reqs['condition']:
                 print('    Condition      -')
-                print(inspect.getsource(param_reqs['condition']))
+                # print(inspect.getsource(param_reqs['condition']))
+                print_condition(param_reqs['condition'])
             else:
                 print('')
 
@@ -123,6 +128,16 @@ class ModelConfigTemplate:
             param_dict[param_name] = getattr(self, param_name)
 
         return param_dict
+
+
+def print_condition(condition):
+    cstr = inspect.getsource(condition)
+    len_lws = len(cstr) - len(cstr.lstrip(' '))
+
+    cstr = [s[len_lws:] for s in cstr.split('\n')]
+    cstr = ('\n' + ' ' * 8).join(cstr)
+
+    print(' ' * 8 + cstr)
 
 
 def check_accpted_types(accepted_types, param_val):

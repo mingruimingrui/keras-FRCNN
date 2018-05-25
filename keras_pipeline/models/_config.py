@@ -1,14 +1,15 @@
 import sys
 import keras
-from ._config_template import ModelConfigTemplate
+from collections import OrderedDict
+from ._config_template import ConfigTemplate
 
 
-class RetinaNetConfig(ModelConfigTemplate):
+class RetinaNetConfig(ConfigTemplate):
     """ For help on RetinaNetConfig, use RetinaNetConfig.help() """
 
-    def __init__(self, **kwargs):
+    def __init__(self, help=False, **kwargs):
         self.__name__ = 'RetinaNetConfig'
-        self.__params__ = {}
+        self.__params__ = OrderedDict()
 
         self.add(
             'name',
@@ -32,19 +33,34 @@ class RetinaNetConfig(ModelConfigTemplate):
             condition = lambda x: len(x) == 3
         )
 
-        def is_input_tensor_valid(input_tensor):
-            valid_type = type(input_tensor) == type(keras.Input(shape=(1, 1)))
-            valid_len  = len(input_tensor) == 3
-
-            return valid_type & valid_len
-
         self.add(
             'input_tensor',
             'Tensor as an input (overwrites input_shape)',
             condition = is_input_tensor_valid
         )
 
-        # Backbone Config
+        # Loss config
+
+        self.add(
+            'classification_loss',
+            'A classifier loss function for shape (None, None, 4), default focal_loss',
+            condition = lambda x: callable(x)
+        )
+
+        self.add(
+            'regression_loss',
+            'A regression loss function, default smooth_l1\n'                 + ' ' * 21 +
+                'Do note that the expected y_true shape is (None, None, 5)\n' + ' ' * 21 +
+                'and expected y_pred shape is (None, None, 4)\n'              + ' ' * 21 +
+                'Last channel in y_true is to determine if anchor should be ignored',
+            condition = lambda x: callable(x)
+        )
+
+        # self.add(
+        #     'optimizer'
+        # )
+
+        # Backbone config
 
         self.add(
             'backbone_name',
@@ -60,7 +76,7 @@ class RetinaNetConfig(ModelConfigTemplate):
             accepted_types = bool
         )
 
-        # Model Config
+        # Model config
 
         self.add(
             'pyramid_feature_size',
@@ -100,9 +116,6 @@ class RetinaNetConfig(ModelConfigTemplate):
             accepted_types = 'list-like'
         )
 
-        ratios  = [0.5, 1., 2.],
-        scales  = [2. ** 0., 2. ** (1. / 3.), 2. ** (2. / 3.)],
-
         self.add(
             'anchor_ratios',
             'List of ratios that anchor are generated wrt a window',
@@ -110,11 +123,24 @@ class RetinaNetConfig(ModelConfigTemplate):
             accepted_types = 'list-like'
         )
 
-        self._check_valid(**kwargs)
-        self._additional_checks()
+        self.add(
+            'anchor_scales',
+            'List of scales that anchor are generated wrt a window',
+            default = [2. ** 0., 2. ** (1. / 3.), 2. ** (2. / 3.)],
+            accepted_types = 'list-like'
+        )
 
 
-    def _additional_checks(self):
+        if help:
+            self.help()
+        else:
+            self._validate_kwargs_(**kwargs)
+
+
+    def _validate_kwargs_(self, **kwargs):
+        super(RetinaNetConfig, self)._validate_kwargs_(**kwargs)
+
+        # Anchor strides and
         assert len(self.anchor_sizes) == len(self.anchor_strides)
 
 
@@ -129,4 +155,11 @@ class RetinaNetConfig(ModelConfigTemplate):
 
 
     def get_num_anchors(self):
-        return 9
+        return len(self.anchor_ratios) * len(self.anchor_scales)
+
+
+def is_input_tensor_valid(input_tensor):
+    valid_type = type(input_tensor) == type(keras.Input(shape=(1, 1)))
+    valid_len  = len(input_tensor) == 3
+
+    return valid_type & valid_len

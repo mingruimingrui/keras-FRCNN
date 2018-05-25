@@ -4,6 +4,7 @@ import numpy as np
 
 import keras
 from .. import layers
+from .. import losses
 
 
 def default_classification_model(
@@ -249,13 +250,23 @@ def RetinaNetTrain(config):
     classification = __apply_model(classification_model, features, name='classification')
     regression     = __apply_model(regression_model    , features, name='regression'    )
 
-    outputs = [classification, regression]
-
-    return keras.Model(
+    # Build model
+    training_model = keras.Model(
         inputs  = input,
-        outputs = outputs,
+        outputs = [classification, regression],
         name    = config.name
     )
+
+    # Compile model
+    training_model.compile(
+        loss={
+            'regression'    : losses.make_detection_smooth_l1_loss(),
+            'classification': losses.make_detection_focal_loss()
+        },
+        optimizer=keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
+    )
+
+    return training_model
 
 
 def RetinaNet(config):
@@ -276,9 +287,15 @@ def RetinaNet(config):
     input = model.input
     features = [model.get_layer(l).output for l in ('P3', 'P4', 'P5', 'P6', 'P7')]
 
-    # Get anchors, classification and regression
-    anchors = __build_anchors(features)
+    # Get classification, regression and anchors
     classification, regression = model.output
+    anchors = __build_anchors(
+        features,
+        sizes   = config.anchor_sizes,
+        strides = config.anchor_strides,
+        ratios  = config.anchor_ratios,
+        scales  = config.anchor_scales,
+    )
 
     # Apply predicted regression to anchors
     boxes = layers.RegressBoxes(name='boxes')([anchors, regression])

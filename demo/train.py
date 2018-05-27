@@ -10,9 +10,16 @@ if __name__ == "__main__" and __package__ is None:
     import keras_pipeline
     __package__ = "keras_pipeline"
 
-from keras_pipeline.models import RetinaNet, RetinaNetTrain, RetinaNetConfig
+# Model
+from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFromTrain
+
+# Data generator
 from keras_pipeline.generators.coco import CocoDetectionGenerator
 from keras_pipeline.utils.transform import random_transform_generator
+
+# Evaluation callbacks
+from keras_pipeline.callbacks import RedirectModel
+from keras_pipeline.callbacks.eval import Evaluate
 
 
 def makedirs(path):
@@ -20,8 +27,10 @@ def makedirs(path):
         os.makedirs(path)
 
 
-def create_callback(args):
+def create_callback(training_model, prediction_model, validation_generator, args):
     callbacks = []
+
+    tensorboard_callback = None
 
     if args.tensorboard_dir:
         makedirs(args.tensorboard_dir)
@@ -37,10 +46,49 @@ def create_callback(args):
             embeddings_metadata    = None
         )
         callbacks.append(tensorboard_callback)
-    else:
-        tensorboard_callback = None
 
-    # if args.evaluation
+    # Save model
+    if args.snapshots:
+        # ensure directory created first; otherwise h5py will error after epoch.
+        makedirs(args.snapshot_path)
+        checkpoint = keras.callbacks.ModelCheckpoint(
+            os.path.join(
+                args.snapshot_path,
+                'Inception_COCO_{{epoch:02d}}.h5'
+            ),
+            verbose=1,
+            # save_best_only=True,
+            # monitor="mAP",
+            # mode='max'
+        )
+        # checkpoint = RedirectModel(checkpoint, training_model)
+        callbacks.append(checkpoint)
+
+    if args.evaluation:
+        evaluation = Evaluate(validation_generator, tensorboard=tensorboard_callback)
+        evaluation = RedirectModel(evaluation, prediction_model)
+        callbacks.append(evaluation)
+
+    callbacks.append(keras.callbacks.ReduceLROnPlateau(
+        monitor  = 'loss',
+        factor   = 0.1,
+        patience = 2,
+        verbose  = 1,
+        mode     = 'auto',
+        epsilon  = 0.0001,
+        cooldown = 0,
+        min_lr   = 0
+    ))
+
+    return callbacks
+
+
+def create_models(args, model_config):
+    training_model = RetinaNetTrain(model_config)
+    prediction_model = RetinaNetFromTrain(training_model, model_config)
+
+    return training_model, prediction_model
+
 
 
 def create_generators(args, model_config):
@@ -57,15 +105,13 @@ def create_generators(args, model_config):
         flip_y_chance=0.5,
     )
 
-    # DEBUG: don't produce train_generator yet
-    train_generator = None
-    # train_generator = CocoDetectionGenerator(
-    #     args.coco_path,
-    #     'train2017',
-    #     transform_generator=transform_generator,
-    #     batch_size = args.batch_size
-    #     compute_anchors = model_config.compute_anchors
-    # )
+    train_generator = CocoDetectionGenerator(
+        args.coco_path,
+        'train2017',
+        batch_size = args.batch_size,
+        compute_anchors = model_config.compute_anchors,
+        transform_generator=transform_generator
+    )
 
     validation_generator = CocoDetectionGenerator(
         args.coco_path,
@@ -156,29 +202,38 @@ def main():
     args = get_args(sys.argv[1:])
     setup()
 
-    print('==== Begining training of the demo retinanet model ====\n')
+    print('\n==== Begining training of the demo retinanet model ====')
 
-    # Create data generator
-    train_generator, validation_generator = create_generators(args)
+    # Create a dataset generator config file
+    # TODO: add dataset generator config
+    # CocoDetectionGeneratorConfig
 
     # Create a model config object to store information on model
-    model_config = RetinaNetConfig(num_classes = validation_generator.num_classes())
+    # TODO: call num_classes from GeneratorConfig
+    model_config = RetinaNetConfig(num_classes = 80)
+
+    # Create data generator
+    # TODO: add dataset generator config
+    train_generator, validation_generator = create_generators(args, model_config)
 
     # Create training model
-    print('==== Creating Model ====')
+    print('\n==== Creating Model ====')
     print('This can take a while...')
-    model = RetinaNetTrain(model_config)
+    training_model, prediction_model = create_models(args, model_config)
     print('Model created')
-    print(model.output)
 
     # Create callback
-    create_callback(args, model_config)
+    callbacks = create_callback(training_model, prediction_model, validation_generator, args)
 
-
-
-
-
-
+    # start_training
+    print('\n==== Training Model ====')
+    training_model.fit_generator(
+        generator=train_generator,
+        steps_per_epoch=10000,
+        epochs=50,
+        verbose=1,
+        callbacks=callbacks,
+    )
 
 
 if __name__ == '__main__':

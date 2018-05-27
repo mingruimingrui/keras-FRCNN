@@ -193,17 +193,14 @@ class RetinaNetConfig(ConfigTemplate):
 
 
     def compute_anchors(self, image_shape):
-        util_anchors.compute_all_anchors(
+        return util_anchors.compute_all_anchors(
             image_shape,
-            sizes = self.anchor_sizes
+            sizes = self.anchor_sizes,
             strides = self.anchor_strides,
             ratios = self.anchor_ratios,
             scales = self.anchor_scales,
             shapes_callback = self.compute_pyramid_feautre_shapes_for_img_shape,
         )
-
-
-
 
 
 def is_input_tensor_valid(input_tensor):

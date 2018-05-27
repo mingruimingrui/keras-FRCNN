@@ -34,5 +34,11 @@ def meshgrid(*args, **kwargs):
     return tensorflow.meshgrid(*args, **kwargs)
 
 
-def resize_images(*args, **kwargs):
-    return tensorflow.image.resize_images(*args, **kwargs)
+def resize_images(images, size, method='bilinear', align_corners=False):
+    methods = {
+        'bilinear': tensorflow.image.ResizeMethod.BILINEAR,
+        'nearest' : tensorflow.image.ResizeMethod.NEAREST_NEIGHBOR,
+        'bicubic' : tensorflow.image.ResizeMethod.BICUBIC,
+        'area'    : tensorflow.image.ResizeMethod.AREA,
+    }
+    return tensorflow.image.resize_images(images, size, methods[method], align_corners)

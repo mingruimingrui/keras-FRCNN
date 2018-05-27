@@ -6,7 +6,7 @@
 from .inception import InceptionV3
 
 # Detection
-from .retinanet import RetinaNet, RetinaNetTrain
+from .retinanet import RetinaNet, RetinaNetTrain, RetinaNetFromTrain
 from .model_config import RetinaNetConfig
 
 # Feature Extraction

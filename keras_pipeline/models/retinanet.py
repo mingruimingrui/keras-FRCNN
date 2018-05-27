@@ -267,10 +267,11 @@ def RetinaNetTrain(config):
     return training_model
 
 
-def RetinaNet(config):
-    """ Build a retinanet model for inference
+def RetinaNetFromTrain(model, config):
+    """ Build a retinanet model for inference from a training model
 
     Args
+        model  - A RetinaNetTrain model
         config - A RetinaNetConfig object, refer to
                  keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
@@ -278,8 +279,6 @@ def RetinaNet(config):
         A retinanet model that returns detections
 
     """
-    # This maybe seems unintuitive, but the prediction model is built on top a of a train model
-    model = RetinaNetTrain(config)
 
     # Extract input and pyramid level features from the model
     input = model.input
@@ -310,3 +309,51 @@ def RetinaNet(config):
         outputs = outputs,
         name    = config.name
     )
+
+
+def RetinaNet(config):
+    """ Build a retinanet model for inference
+
+    Args
+        config - A RetinaNetConfig object, refer to
+                 keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
+
+    Returns
+        A retinanet model that returns detections
+
+    """
+    # This maybe seems unintuitive, but the prediction model is built on top a of a train model
+    training_model = RetinaNetTrain(config)
+    prediction_model = RetinaNetFromTrain(training_model, config)
+
+    return prediction_model
+
+    # # Extract input and pyramid level features from the model
+    # input = model.input
+    # features = [model.get_layer(l).output for l in ('P3', 'P4', 'P5', 'P6', 'P7')]
+    #
+    # # Get classification, regression and anchors
+    # classification, regression = model.output
+    # anchors = __build_anchors(
+    #     features,
+    #     sizes   = config.anchor_sizes,
+    #     strides = config.anchor_strides,
+    #     ratios  = config.anchor_ratios,
+    #     scales  = config.anchor_scales,
+    # )
+    #
+    # # Apply predicted regression to anchors
+    # boxes = layers.RegressBoxes(name='boxes')([anchors, regression])
+    # boxes = layers.ClipBoxes(name='clipped_boxes')([input, boxes])
+    #
+    # # Calculate detections
+    # detections = layers.FilterDetections(name='nms')([boxes, classification])
+    #
+    # # Define outputs
+    # outputs = detections
+    #
+    # return keras.Model(
+    #     inputs  = input,
+    #     outputs = outputs,
+    #     name    = config.name
+    # )

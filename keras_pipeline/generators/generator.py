@@ -179,7 +179,7 @@ class DetectionGenerator(object):
                 annotations,
                 self.num_classes(),
                 mask_shape=image.shape,
-                compute_anchors=compute_anchors
+                compute_anchors=self.compute_anchors
             )
             regression_group[index] = bbox_transform(anchors, annotations)
 
@@ -195,7 +195,7 @@ class DetectionGenerator(object):
             labels_batch[index, ...]     = labels
             regression_batch[index, ...] = regression
 
-        return [regression_batch, labels_batch]
+        return [labels_batch, regression_batch]
 
     def compute_input_output(self, group):
         # load images and annotations

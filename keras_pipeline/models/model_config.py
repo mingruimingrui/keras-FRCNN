@@ -1,10 +1,11 @@
 import sys
 import numpy as np
-
 from collections import OrderedDict
-from ._config_template import ConfigTemplate
 
 import keras
+
+from ..utils._config_template import ConfigTemplate
+from ..utils import anchors as util_anchors
 from .. import losses
 
 
@@ -44,6 +45,9 @@ class RetinaNetConfig(ConfigTemplate):
             'Tensor as an input (overwrites input_shape)',
             condition = is_input_tensor_valid
         )
+
+        # Custom models config
+        # TODO: Allow user to define own backbone, classifier and regression models
 
         # Loss and optimizer config
 
@@ -169,18 +173,37 @@ class RetinaNetConfig(ConfigTemplate):
         return len(self.anchor_ratios) * len(self.anchor_scales)
 
 
-    def get_feature_pyramid_shapes(self):
-        # if self.feature_pyramid_shapes:
+    def compute_pyramid_feautre_shapes_for_img_shape(self, image_shape):
+        C0_shape = np.array(image_shape[:2])
+
         if self.backbone_name is 'inception_v3':
-            return [
-                np.array([97, 97]),
-                np.array([48, 48]),
-                np.array([23, 23]),
-                np.array([12, 12]),
-                np.array([ 6,  6])
-            ]
+            C1_shape = np.ceil((C0_shape - 2) / 2) - 2
+            C2_shape = np.ceil((C1_shape - 2) / 2) - 2
+
+            P3_shape = np.ceil((C2_shape - 2) / 2)
+            P4_shape = np.ceil((P3_shape - 2) / 2)
+            P5_shape = np.ceil((P4_shape - 2) / 2)
+            P6_shape = np.ceil(P5_shape / 2)
+            P7_shape = np.ceil(P6_shape / 2)
+
         else:
             raise Exception('{} is invalid backbone_name'.format(self.backbone_name))
+
+        return P3_shape, P4_shape, P5_shape, P6_shape, P7_shape
+
+
+    def compute_anchors(self, image_shape):
+        util_anchors.compute_all_anchors(
+            image_shape,
+            sizes = self.anchor_sizes
+            strides = self.anchor_strides,
+            ratios = self.anchor_ratios,
+            scales = self.anchor_scales,
+            shapes_callback = self.compute_pyramid_feautre_shapes_for_img_shape,
+        )
+
+
+
 
 
 def is_input_tensor_valid(input_tensor):

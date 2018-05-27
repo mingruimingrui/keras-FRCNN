@@ -3,14 +3,16 @@ import numpy as np
 
 def anchor_targets_bbox(
     image_shape,
-    all_anchors,
     annotations,
     num_classes,
     mask_shape=None,
     negative_overlap=0.4,
     positive_overlap=0.5,
+    compute_anchors=compute_all_anchors,
     **kwargs
 ):
+    anchors = compute_anchors(image_shape)
+
     # label: 1 is positive, 0 is negative, -1 is dont care
     labels = np.ones((anchors.shape[0], num_classes)) * -1
 
@@ -44,49 +46,65 @@ def anchor_targets_bbox(
     return labels, annotations, anchors
 
 
-def generate_all_anchors(
+def compute_all_anchors(
     image_shape,
-    feature_pyramid_shapes,
-    pyramid_levels=None,
-    sizes=None,
-    strides=None,
-    ratios=None,
-    scales=None,
+    sizes           = [8, 16, 32, 64, 128],
+    strides         = [32, 64, 128, 256, 512],
+    ratios          = [0.5, 1., 2.],
+    scales          = [2. ** 0., 2. ** (1. / 3.), 2 ** (2. / 3.)],
+    shapes_callback = None,
 ):
-    """Generate all anchors based on image_shape as well as anchor configs and pyramid_levels
+    """ Generate all anchors based on image_shape as well as anchor configs and pyramid_levels
+
+    Args
+        image_shape     : (height, width) of an image
+        sizes           : List of sizes to use. Each size corresponds to one feature level
+        strides         : List of strides to use. Each stride corresponds to one feature level
+        ratios          : List of ratios to use per location in a feature map
+        scales          : List of scales to use per location in a feature map
+        shapes_callback : A function that calculates the pyramid_feature_shapes given an image_shape
+
+    Returns
+        All anchors for image_shape
+
     """
 
-    if pyramid_levels is None:
-        pyramid_levels = [3, 4, 5, 6, 7]
-    if strides is None:
-        strides = [2 ** x for x in pyramid_levels]
-    if sizes is None:
-        sizes = [2 ** (x + 2) for x in pyramid_levels]
-    if ratios is None:
-        ratios = np.array([0.5, 1, 2])
-    if scales is None:
-        scales = np.array([2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)])
+    assert len(sizes) == len(strides), 'length of sizes must be same as strides'
+
+    if shapes_callback is None:
+        def guess_shapes(image_shape):
+            image_shape = np.array(image_shape[:2])
+            image_shapes = [(image_shape + 2 ** x - 1) // (2 ** x) for x in [3, 4, 5, 6, 7]]
+            return image_shapes
+
+        shapes_callback = guess_shapes
+
+    image_shapes = shapes_callback(image_shape)
 
     # compute anchors over all pyramid levels
     all_anchors = np.zeros((0, 4))
-    for idx, p in enumerate(pyramid_levels):
+    for idx in range(len(sizes)):
         anchors         = generate_anchors(base_size=sizes[idx], ratios=ratios, scales=scales)
-        shifted_anchors = shift(feature_pyramid_shapes[idx], strides[idx], anchors)
+        shifted_anchors = shift(image_shapes[idx], strides[idx], anchors)
         all_anchors     = np.append(all_anchors, shifted_anchors, axis=0)
 
     return all_anchors
 
 
 def generate_anchors(base_size=16, ratios=None, scales=None):
-    """Generate anchors based on a size a set of ratios and scales
+    """ Generate anchors based on a size a set of ratios and scales
     w.r.t a reference window
     """
 
     if ratios is None:
         ratios = np.array([0.5, 1., 2.])
+    else:
+        ratios = np.array(ratios)
 
     if scales is None:
         scales = np.array([2. ** 0., 2. ** (1. / 3.), 2. ** (2. / 3.)])
+    else:
+        scales = np.array(scales)
 
     num_anchors = len(ratios) * len(scales)
 

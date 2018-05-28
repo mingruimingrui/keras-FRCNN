@@ -1,5 +1,5 @@
 from .generator import DetectionGenerator
-from ..utils.image import read_image_bgr
+from ..preprocessing.image import read_image_bgr
 
 import os
 import numpy as np

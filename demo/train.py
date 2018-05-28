@@ -15,7 +15,7 @@ from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFrom
 
 # Data generator
 from keras_pipeline.generators.coco import CocoDetectionGenerator
-from keras_pipeline.utils.transform import random_transform_generator
+from keras_pipeline.preprocessing.transform import random_transform_generator
 
 # Evaluation callbacks
 from keras_pipeline.callbacks import RedirectModel

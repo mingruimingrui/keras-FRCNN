@@ -7,14 +7,14 @@ import warnings
 import keras
 
 from ..utils.anchors import anchor_targets_bbox, compute_all_anchors, bbox_transform
-from ..utils.image import (
+from ..preprocessing.image import (
     TransformParameters,
     adjust_transform_for_image,
     apply_transform,
     preprocess_image,
     resize_image,
 )
-from ..utils.transform import transform_aabb
+from ..preprocessing.transform import transform_aabb
 
 
 class DetectionGenerator(object):

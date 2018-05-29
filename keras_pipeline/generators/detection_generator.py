@@ -6,16 +6,18 @@ import math
 import numpy as np
 import random
 import threading
+import warnings
 
 import keras
 
+from ..utils.anchors import anchor_targets_bbox, bbox_transform
 from ..preprocessing.image import (
     preprocess_image,
     adjust_transform_for_image,
     apply_transform,
-    transform_aabb,
     resize_image
 )
+from ..preprocessing.transform import transform_aabb
 
 
 """ These functions written outside are those that
@@ -90,6 +92,7 @@ class DetectionGenerator(object):
         _validate_dataset(config.dataset)
 
         self.data            = config.dataset
+        self.backbone_name   = config.backbone_name
         self.compute_anchors = config.compute_anchors
         self.batch_size      = config.batch_size
         self.image_min_side  = config.image_min_side
@@ -160,14 +163,14 @@ class DetectionGenerator(object):
         return image_group, annotations_group
 
     def preprocess_image(self, image):
-        return preprocess_image(image)
+        return preprocess_image(image, backbone=self.backbone_name)
 
     def random_transform_entry(self, image, annotations):
         transformation = adjust_transform_for_image(next(self.transform_generator), image, self.transform_parameters.relative_translation)
 
         # Transform image and annotations
         image = apply_transform(transformation, image, self.transform_parameters)
-        annotaions = annotations.copy()
+        annotations = annotations.copy()
         for index in range(annotations.shape[0]):
             annotations[index, :4] = transform_aabb(transformation, annotations[index, :4])
 
@@ -188,7 +191,7 @@ class DetectionGenerator(object):
         image, image_scale = self.resize_image(image)
         annotations[:, :4] *= image_scale
 
-        return image, annotaions
+        return image, annotations
 
     def preprocess_group(self, image_group, annotations_group):
         for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
@@ -202,20 +205,48 @@ class DetectionGenerator(object):
         return image_group, annotations_group
 
     def compute_inputs(self, image_group):
-        # get the max image shape
+        # Get the max image shape
         max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
 
-        # construct an image batch object
+        # Construct an image batch object
         image_batch = np.zeros((self.batch_size,) + max_shape, dtype=keras.backend.floatx())
 
-        # copy all images to the upper left part of the image batch object
+        # Copy all images to the upper left part of the image batch object
         for image_index, image in enumerate(image_group):
             image_batch[image_index, :image.shape[0], :image.shape[1], :image.shape[2]] = image
 
         return image_batch
 
     def compute_targets(self, image_group, annotations_group):
-        return 'TBI'
+        # Get the max image shape
+        max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
+
+        # Compute labels and regression targets
+        labels_group     = [None] * self.batch_size
+        regression_group = [None] * self.batch_size
+        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
+            labels_group[index], annotations, anchors = anchor_targets_bbox(
+                max_shape,
+                annotations,
+                self.data.get_num_object_classes(),
+                mask_shape = image.shape,
+                compute_anchors = self.compute_anchors
+            )
+            regression_group[index] = bbox_transform(anchors, annotations)
+
+            # append anchor states to regression targets (necessary for filtering 'ignore', 'positive' and 'negative' anchors)
+            anchor_states           = np.max(labels_group[index], axis=1, keepdims=True)
+            regression_group[index] = np.append(regression_group[index], anchor_states, axis=1)
+
+        labels_batch     = np.zeros((self.batch_size,) + labels_group[0].shape, dtype=keras.backend.floatx())
+        regression_batch = np.zeros((self.batch_size,) + regression_group[0].shape, dtype=keras.backend.floatx())
+
+        # copy all labels and regression values to the batch blob
+        for index, (labels, regression) in enumerate(zip(labels_group, regression_group)):
+            labels_batch[index, ...]     = labels
+            regression_batch[index, ...] = regression
+
+        return [labels_batch, regression_batch]
 
     ###########################################################################
     #### This marks the end of _get_batches_of_transformed_samples helpers
@@ -266,8 +297,7 @@ class DetectionGenerator(object):
         return self.next()
 
     def __iter__(self):
-        raise NotImplementedError('Generator is not yet iteratable, still in experimental phase')
-
+        warnings.warn('Iteration of Generator is still in an experimental phase')
         group_index = -1
         reset_point = len(self.groups) - 1
 

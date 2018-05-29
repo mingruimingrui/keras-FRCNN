@@ -2,7 +2,7 @@ import cv2
 from collections import OrderedDict
 
 from ..utils._config_template import ConfigTemplate
-from ..datasets import ImageDatasetTemplate
+from ..datasets._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image import TransformParameters
 
 
@@ -20,6 +20,13 @@ class GeneratorConfig(ConfigTemplate):
             'Dataset for this generator, must be super type ImageDatasetTemplate',
             required = True,
             condition = lambda x: issubclass(type(x), ImageDatasetTemplate)
+        )
+
+        self.add(
+            'backbone_name',
+            'Name of the backbone to your model (used to determine preprocessing to perform)',
+            required = True,
+            valid_options = ['inception_v3']
         )
 
         self.add(

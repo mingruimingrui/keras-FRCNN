@@ -30,7 +30,8 @@ def InceptionBackbone(input_tensor, freeze_backbone=False):
 
     backbone = keras.Model(
         inputs = inception_model.input,
-        outputs = [C1, C2, C3, C4, C5]
+        outputs = [C1, C2, C3, C4, C5],
+        name = 'inception_backbone'
     )
 
     return backbone

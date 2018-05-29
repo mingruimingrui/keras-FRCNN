@@ -5,8 +5,10 @@ from collections import OrderedDict
 
 
 class ConfigTemplate:
+    """ For help on ConfigTemplate, use ConfigTemplate(help=True) """
+
     def __init__(self, help=False, **kwargs):
-        self.__name__ = 'ModelConfigTemplate'
+        self.__name__ = 'ConfigTemplate'
         self.__params__ = OrderedDict()
 
         """Place all your self.add here and remove Error"""
@@ -149,8 +151,14 @@ def check_accpted_types(accepted_types, param_val):
         return True
 
     for at in (at for at in accepted_types if not isinstance(at, type)):
+        if at == 'numeric':
+            if is_int_like(param_val) or is_float_like(param_val):
+                return True
         if at == 'int-like':
             if is_int_like(param_val):
+                return True
+        elif at == 'float-like':
+            if is_float_like(param_val):
                 return True
         elif at == 'list-like':
             if is_list_like(param_val):
@@ -163,6 +171,10 @@ def check_accpted_types(accepted_types, param_val):
 
 def is_int_like(x):
     return np.issubdtype(type(x), np.integer)
+
+
+def is_float_like(x):
+    return np.issubdtype(type(x), np.floating)
 
 
 def is_list_like(x):

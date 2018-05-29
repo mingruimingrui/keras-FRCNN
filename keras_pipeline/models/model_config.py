@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 from collections import OrderedDict
 
@@ -10,7 +9,7 @@ from .. import losses
 
 
 class RetinaNetConfig(ConfigTemplate):
-    """ For help on RetinaNetConfig, use RetinaNetConfig.help() """
+    """ For help on RetinaNetConfig, use RetinaNetConfig(help=True) """
 
     def __init__(self, help=False, **kwargs):
         self.__name__ = 'RetinaNetConfig'
@@ -155,7 +154,7 @@ class RetinaNetConfig(ConfigTemplate):
     def _validate_kwargs_(self, **kwargs):
         super(RetinaNetConfig, self)._validate_kwargs_(**kwargs)
 
-        # Anchor strides and
+        # Anchor strides and sizes must be the same size
         assert len(self.anchor_sizes) == len(self.anchor_strides)
 
 

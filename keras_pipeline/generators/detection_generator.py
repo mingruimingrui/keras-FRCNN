@@ -9,6 +9,14 @@ import threading
 
 import keras
 
+from ..preprocessing.image import (
+    preprocess_image,
+    adjust_transform_for_image,
+    apply_transform,
+    transform_aabb,
+    resize_image
+)
+
 
 """ These functions written outside are those that
     1. does not reference self and
@@ -97,6 +105,7 @@ class DetectionGenerator(object):
         )
 
         # Create transform generator
+        self.transform_parameters = config.transform_parameters
         self.transform_generator = None
         if config.allow_transform:
             self.transform_generator = _make_transform_generator(config)
@@ -105,10 +114,130 @@ class DetectionGenerator(object):
         self.lock = threading.Lock() # this is to allow for parrallel batch processing
         self.group_index_generator = self._make_index_generator(len(self.groups))
 
+    ###########################################################################
+    #### This marks the start of _get_batches_of_transformed_samples helpers
 
-    def _get_batches_of_transformed_samples(self, group_index):
-        # TODO: Generate batch based off group_index
-        return group_index, self.groups[group_index], 'TBI'
+    def load_image_group(self, group):
+        """ Returns list of images from group """
+        return [self.data.load_image(image_index) for image_index in group]
+
+    def load_annotations_group(self, group):
+        """ Returns list of annotations from group
+        Annotations should be in the form [x1, y1, x2, y2, class]
+        Notably this is different to keras_pipeline.datasets.ImageDatasetTemplate.load_annotations_array
+        """
+        annotations_group = []
+        for image_index in group:
+            annotations = self.data.load_annotations_array(image_index)
+
+            # for annotations_group bbox must be in x1, y1, x2, y2 format
+            annotations[:, 2] = annotations[:, 0] + annotations[:, 2]
+            annotations[:, 3] = annotations[:, 1] + annotations[:, 3]
+
+            annotations_group.append(annotations)
+
+        return annotations_group
+
+    def filter_annotations(self, image_group, annotations_group):
+        # test all annotations
+        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
+            assert isinstance(annotations, np.ndarray)
+
+            # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0 | x2 >= image.shape[1] | y2 >= image.shape[0]
+            invalid_indices = np.where(
+                (annotations[:, 2] <= annotations[:, 0]) |
+                (annotations[:, 3] <= annotations[:, 1]) |
+                (annotations[:, 0] < 0) |
+                (annotations[:, 1] < 0) |
+                (annotations[:, 2] > image.shape[1]) |
+                (annotations[:, 3] > image.shape[0])
+            )[0]
+
+            # delete invalid indicies
+            if len(invalid_indices):
+                annotations_group[index] = np.delete(annotations, invalid_indices, axis=0)
+
+        return image_group, annotations_group
+
+    def preprocess_image(self, image):
+        return preprocess_image(image)
+
+    def random_transform_entry(self, image, annotations):
+        transformation = adjust_transform_for_image(next(self.transform_generator), image, self.transform_parameters.relative_translation)
+
+        # Transform image and annotations
+        image = apply_transform(transformation, image, self.transform_parameters)
+        annotaions = annotations.copy()
+        for index in range(annotations.shape[0]):
+            annotations[index, :4] = transform_aabb(transformation, annotations[index, :4])
+
+        return image, annotations
+
+    def resize_image(self, image):
+        return resize_image(image, min_side=self.image_min_side, max_side=self.image_max_side)
+
+    def preprocess_entry(self, image, annotations):
+        # Preprocess the image
+        image = self.preprocess_image(image)
+
+        # Apply transformation
+        if self.transform_generator:
+            image, annotations = self.random_transform_entry(image, annotations)
+
+        # resize image and annotations
+        image, image_scale = self.resize_image(image)
+        annotations[:, :4] *= image_scale
+
+        return image, annotaions
+
+    def preprocess_group(self, image_group, annotations_group):
+        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
+            # Preprocess a single group entry
+            image, annotations = self.preprocess_entry(image, annotations)
+
+            # Update group
+            image_group[index]       = image
+            annotations_group[index] = annotations
+
+        return image_group, annotations_group
+
+    def compute_inputs(self, image_group):
+        # get the max image shape
+        max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
+
+        # construct an image batch object
+        image_batch = np.zeros((self.batch_size,) + max_shape, dtype=keras.backend.floatx())
+
+        # copy all images to the upper left part of the image batch object
+        for image_index, image in enumerate(image_group):
+            image_batch[image_index, :image.shape[0], :image.shape[1], :image.shape[2]] = image
+
+        return image_batch
+
+    def compute_targets(self, image_group, annotations_group):
+        return 'TBI'
+
+    ###########################################################################
+    #### This marks the end of _get_batches_of_transformed_samples helpers
+
+    def _get_batches_of_transformed_samples(self, group):
+        # load images and annotations
+        image_group       = self.load_image_group(group)
+        annotations_group = self.load_annotations_group(group)
+
+        # check validity of annotations
+        image_group, annotations_group = self.filter_annotations(image_group, annotations_group)
+
+        # perform preprocessing
+        image_group, annotations_group = self.preprocess_group(image_group, annotations_group)
+
+        # compuate network inputs
+        inputs = self.compute_inputs(image_group)
+
+        # compute network targets
+        targets = self.compute_targets(image_group, annotations_group)
+
+        return inputs, targets
 
     def _make_index_generator(self, num_groups):
         """ Returns a generator which yields group index to train the model in """
@@ -127,7 +256,8 @@ class DetectionGenerator(object):
     def next(self):
         with self.lock:
             group_index = next(self.group_index_generator)
-        return self._get_batches_of_transformed_samples(group_index)
+            group = self.groups[group_index]
+        return self._get_batches_of_transformed_samples(group)
 
     def __len__(self):
         return self.data.get_size()
@@ -143,4 +273,5 @@ class DetectionGenerator(object):
 
         while group_index < reset_point:
             group_index += 1
-            yield self._get_batches_of_transformed_samples(group_index)
+            group = self.groups[group_index]
+            yield self._get_batches_of_transformed_samples(group)

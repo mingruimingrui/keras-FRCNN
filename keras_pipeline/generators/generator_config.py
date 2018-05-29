@@ -67,7 +67,7 @@ class GeneratorConfig(ConfigTemplate):
         self.add(
             'shuffle_groups',
             'Shuffle the group order',
-            default = True,
+            default = False,
             accepted_types = bool
         )
 

@@ -14,7 +14,12 @@ def read_image_bgr(path):
     return image[:, :, ::-1].copy()
 
 
-def preprocess_image(x):
+def preprocess_image_inception(x):
+    x = x.astype(keras.backend.floatx())
+    return (x / 255 * 2) - 1
+
+
+def preprocess_image_resnet(x):
     # mostly identical to "https://github.com/fchollet/keras/blob/master/keras/applications/imagenet_utils.py"
     # except for converting RGB -> BGR since we assume BGR already
     x = x.astype(keras.backend.floatx())
@@ -33,6 +38,15 @@ def preprocess_image(x):
         x[..., 2] -= 123.68
 
     return x
+
+
+def preprocess_image(x, backbone):
+    if 'inception' in backbone:
+        return preprocess_image_inception(x)
+    elif 'resnet' in backbone:
+        return preprocess_image_resnet(x)
+    else:
+        raise NotImplementedError("Your backbone {} has not been implemented".format(backbone))
 
 
 def adjust_transform_for_image(transform, image, relative_translation):

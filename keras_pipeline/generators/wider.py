@@ -1,3 +1,5 @@
+"""DEPRECIATED"""
+
 # TODO: Implement WiderDetectionGenerator
 
 class WiderDetectionGenerator(DetectionGenerator):

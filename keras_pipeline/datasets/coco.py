@@ -4,6 +4,7 @@ from PIL import Image
 
 from pycocotools.coco import COCO
 from ._ImageDatasetTemplate import ImageDatasetTemplate
+from ..preprocessing.image import read_image_bgr
 
 class COCODataset(ImageDatasetTemplate):
     """ COCO dataset API meant to be used by generators.DetectionGenerator
@@ -94,7 +95,7 @@ class COCODataset(ImageDatasetTemplate):
 
     def load_image(self, image_index):
         file_path = self.image_infos[image_index]['file_path']
-        return np.asarray(Image.open(file_path))
+        return read_image_bgr(file_path)
 
     def load_image_info(self, image_index):
         return self.image_infos[image_index]

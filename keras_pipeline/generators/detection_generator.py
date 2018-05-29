@@ -17,7 +17,7 @@ from ..preprocessing.image import (
     apply_transform,
     resize_image
 )
-from ..preprocessing.transform import transform_aabb
+from ..preprocessing.transform import random_transform_generator, transform_aabb
 
 
 """ These functions written outside are those that

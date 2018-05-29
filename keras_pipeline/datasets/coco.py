@@ -100,11 +100,16 @@ class COCODataset(ImageDatasetTemplate):
         return self.image_infos[image_index]
 
     def load_annotations(self, image_index):
-        return self.image_infos[image_index]['annotations']
+        annotations = self.image_infos[image_index]['annotations']
+        # some annotations have no width or height, skip them
+        return [ann for ann in annotations if (ann['bbox'][2] >= 1) and (ann['bbox'][3] >= 1)]
 
     def load_annotations_array(self, image_index):
         annotations = self.load_annotations(image_index)
-        return np.array([ann['bbox'] + [ann['category_id']] for ann in annotations])
+        if len(annotations) > 0:
+            return np.array([ann['bbox'] + [ann['category_id']] for ann in annotations])
+        else:
+            return np.zeros((0, 5))
 
     def object_class_to_label(self, name):
         return self.object_classes[name]['id']

@@ -13,9 +13,9 @@ if __name__ == "__main__" and __package__ is None:
 # Model
 from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFromTrain
 
-# Data generator
-from keras_pipeline.generators.coco import CocoDetectionGenerator
-from keras_pipeline.preprocessing.transform import random_transform_generator
+# Dataset and generator
+from keras_pipeline.datasets import COCODataset
+from keras_pipeline.generators import GeneratorConfig, DetectionGenerator
 
 # Evaluation callbacks
 from keras_pipeline.callbacks import RedirectModel
@@ -83,44 +83,38 @@ def create_callback(training_model, prediction_model, validation_generator, args
     return callbacks
 
 
-def create_models(args, model_config):
+def make_generators(train_set, validation_set, backbone_name, compute_anchors, args):
+    train_generator_config = GeneratorConfig(
+        dataset = train_set,
+        backbone_name = model_config.backbone_name,
+        compute_anchors = model_config.compute_anchors
+    )
+
+    train_generator = DetectionGenerator(train_generator_config)
+
+    validation_generator_config = GeneratorConfig(
+        dataset = validation_set,
+        backbone_name = model_config.backbone_name,
+        compute_anchors = model_config.compute_anchors
+    )
+
+    validation_generator = DetectionGenerator(validation_generator_config)
+
+    return train_generator, validation_generator
+
+
+def make_models(model_config, args):
     training_model = RetinaNetTrain(model_config)
     prediction_model = RetinaNetFromTrain(training_model, model_config)
 
     return training_model, prediction_model
 
 
+def load_datasets(args):
+    train_set   = COCODataset(args.coco_path, 'train2017')
+    validation_set = COCODataset(args.coco_path)
 
-def create_generators(args, model_config):
-    transform_generator = random_transform_generator(
-        min_rotation=-0.1,
-        max_rotation=0.1,
-        min_translation=(-0.1, -0.1),
-        max_translation=(0.1, 0.1),
-        min_shear=-0.1,
-        max_shear=0.1,
-        min_scaling=(0.9, 0.9),
-        max_scaling=(1.1, 1.1),
-        flip_x_chance=0.5,
-        flip_y_chance=0.5,
-    )
-
-    train_generator = CocoDetectionGenerator(
-        args.coco_path,
-        'train2017',
-        batch_size = args.batch_size,
-        compute_anchors = model_config.compute_anchors,
-        transform_generator=transform_generator
-    )
-
-    validation_generator = CocoDetectionGenerator(
-        args.coco_path,
-        'val2017',
-        batch_size = args.batch_size,
-        compute_anchors = model_config.compute_anchors
-    )
-
-    return train_generator, validation_generator
+    return train_set, validation_set
 
 
 def config_session():
@@ -186,6 +180,8 @@ def parse_args(args):
     parser.add_argument('--no-evaluation',
         help='Disable per epoch evaluation',
         dest='evaluation', action='store_false')
+
+    # Additional parameters
     parser.add_argument('--freeze-backbone',
         help='Freeze training of backbone layers',
         action='store_true')
@@ -204,23 +200,32 @@ def main():
 
     print('\n==== Begining training of the demo retinanet model ====')
 
-    # Create a dataset generator config file
-    # TODO: add dataset generator config
-    # CocoDetectionGeneratorConfig
+    # Load dataset information
+    train_set, validation_set = load_datasets(args)
 
     # Create a model config object to store information on model
-    # TODO: call num_classes from GeneratorConfig
-    model_config = RetinaNetConfig(num_classes = 80)
+    model_config = RetinaNetConfig(num_classes = train_set.get_num_object_classes())
 
-    # Create data generator
-    # TODO: add dataset generator config
-    train_generator, validation_generator = create_generators(args, model_config)
-
-    # Create training model
-    print('\n==== Creating Model ====')
+    # Make model
+    print('\n==== Making Model ====')
     print('This can take a while...')
-    training_model, prediction_model = create_models(args, model_config)
+    training_model, prediction_model = make_models(model_config, args)
     print('Model created')
+
+    # Make the training and validation set generator
+    # The reason why we create model first is because we need to know
+    # how to create anchors and preprocess image
+    print('\n==== Making Data Generators ====')
+    print('This can take a while...')
+    train_generator, validation_generator = make_generators(
+        train_set, validation_set,
+        backbone_name = model_config.backbone_name,
+        compute_anchors = model_config.compute_anchors,
+        args = args
+    )
+    print('Data Generators created')
+
+    sys.exit('DEBUG')
 
     # Create callback
     callbacks = create_callback(training_model, prediction_model, validation_generator, args)

@@ -9,6 +9,10 @@ from PIL import Image
 from .transform import change_transform_origin, transform_aabb
 
 
+def read_image(path):
+    return np.asarray(Image.open(path).convert('RGB'))
+
+
 def read_image_bgr(path):
     image = np.asarray(Image.open(path).convert('RGB'))
     return image[:, :, ::-1].copy()

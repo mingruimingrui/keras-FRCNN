@@ -106,3 +106,6 @@ venv.bak/
 # log and snapshots
 log
 snapshot
+
+# Disable all jupyter-notebooks for now
+*.ipynb

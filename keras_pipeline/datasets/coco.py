@@ -1,0 +1,113 @@
+import os
+import numpy as np
+from PIL import Image
+
+from pycocotools.coco import COCO
+from ._ImageDatasetTemplate import ImageDatasetTemplate
+
+class COCODataset(ImageDatasetTemplate):
+    """ COCO dataset API meant to be used by generators.DetectionGenerator
+    Required your coco dataset to be setup in the following format
+
+    root_dir
+      |- images
+      |- annotations
+
+    Args
+        root_dir : see above
+        set_name : name of the set eg. train2017
+
+    """
+
+    def __init__(self, root_dir, set_name):
+        self.root_dir = root_dir
+        self.set_name = set_name
+
+        # Load annotation file using pycocotools.coco.COCO
+        # Too bad there is no quite mode for this
+        if self.set_name == 'test2017':
+            annotation_file = os.path.join(
+                self.root_dir,
+                'annotations',
+                'image_info_test2017.json'
+            )
+        else:
+            annotation_file = os.path.join(
+                self.root_dir,
+                'annotations',
+                'instances_{}.json'.format(self.set_name)
+            )
+        coco = COCO(annotation_file)
+
+        # Retrieve object class information
+        # Here object_labels  is like label to class_name
+        #      object_classes is like class_name to label
+        # It is also important that label number starts from 0 and ends at num_object_classes
+        coco_label_to_label = {}
+        self.object_labels  = {}
+        self.object_classes = {}
+        for id, class_info in enumerate(coco.cats.values()):
+            coco_label_to_label[class_info['id']] = id
+            class_info['id'] = id
+            self.object_labels [id]                 = class_info
+            self.object_classes[class_info['name']] = class_info
+
+        # Store image information which also includes the associated annotations
+        self.image_infos = coco.imgs
+        for image_index in coco.getImgIds():
+            # Retrieve image specific information
+            image_info = self.image_infos[image_index]
+
+            # Make full file_path for easy access later
+            image_info['file_path'] = os.path.join(
+                self.root_dir,
+                'images',
+                self.set_name,
+                image_info['file_name']
+            )
+
+            # Edit and store annotations
+            image_annotations = coco.imgToAnns[image_index]
+            for i in range(len(image_annotations)):
+                coco_label = image_annotations[i]['category_id']
+                image_annotations[i]['category_id'] = coco_label_to_label[coco_label]
+            image_info['annotations'] = image_annotations
+
+            # Calculate aspect_ratio
+            image_info['aspect_ratio'] = image_info['width'] / image_info['height']
+
+            # Update in self.image_infos
+            self.image_infos[image_index] = image_info
+
+
+    def list_image_index(self):
+        return list(self.image_infos.keys())
+
+    def get_size(self):
+        return len(self.image_infos)
+
+    def get_image_aspect_ratio(self, image_index):
+        return self.image_infos[image_index]['aspect_ratio']
+
+    def get_num_object_classes(self):
+        return len(self.object_classes)
+
+    def load_image(self, image_index):
+        file_path = self.image_infos[image_index]['file_path']
+        return np.asarray(Image.open(file_path))
+
+    def load_image_info(self, image_index):
+        return self.image_infos[image_index]
+
+    def load_annotations(self, image_index):
+        return self.image_infos[image_index]['annotations']
+
+    def load_annotations_array(self, image_index):
+        annotations = self.load_annotations(image_index)
+        return np.array([ann['bbox'] + [ann['category_id']] for ann in annotations])
+
+    def object_class_to_label(self, name):
+        return self.object_classes[name]['id']
+
+    def label_to_object_class(self, label):
+        return self.object_labels[label]['name']

@@ -157,15 +157,15 @@ class RetinaNetConfig(ConfigTemplate):
         # Anchor strides and sizes must be the same size
         assert len(self.anchor_sizes) == len(self.anchor_strides)
 
-
-    def get_input_tensor(self):
+        # Assign proper input_shape and input_tensor
         if self.input_tensor is None:
             if self.input_shape is None:
-                return keras.Input(shape=(None, None, 3))
+                self.input_shape  = (None, None, 3)
+                self.input_tensor = keras.Input(shape=(None, None, 3))
             else:
-                return keras.Input(shape=self.input_shape)
+                self.input_tensor = keras.Input(shape=self.input_shape)
         else:
-            return self.input_tensor
+            self.input_shape = tuple(self.input_tensor.shape[1:].as_list())
 
 
     def get_num_anchors(self):

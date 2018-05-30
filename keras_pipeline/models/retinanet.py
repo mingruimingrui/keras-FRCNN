@@ -224,11 +224,10 @@ def RetinaNetTrain(config):
 
     """
     # Get input_tensor
-    input = config.get_input_tensor()
+    input = config.input_tensor
 
     # Generate pyramid features
-    backbone = load_backbone(input, backbone_name=config.backbone_name, freeze_backbone=config.freeze_backbone)
-    # _, _, C3, C4, C5 = backbone.output
+    backbone = load_backbone(config.input_shape, backbone_name=config.backbone_name, freeze_backbone=config.freeze_backbone)
     _, _, C3, C4, C5 = backbone(input)
     features = __build_pyramid_features(C3, C4, C5, feature_size=config.pyramid_feature_size)
 

@@ -41,6 +41,7 @@ class ImageDatasetTemplate:
     def load_image_info(self, image_index):
         """ If this is a classification task this needs to have the following attributes
         category_id : corresponding to the image class labels
+                      (though this is mainly to help implement load_image_class_array)
         """
         raise NotImplementedError('load_image_info method not implemented')
 
@@ -69,6 +70,7 @@ class ImageDatasetTemplate:
         """ Returns a list of annotations for image with the image_index
         each annotation needs to have the following attributes
             category_id : corresponding to the object class labels
+                          (though this is mainly to help implement load_annotations_array)
             bbox        : in [x, y, w, h] format
         """
         raise NotImplementedError('load_annotations method not implemented')

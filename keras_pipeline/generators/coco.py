@@ -1,3 +1,5 @@
+"""DEPRECIATED"""
+
 from .generator import DetectionGenerator
 from ..preprocessing.image import read_image_bgr
 

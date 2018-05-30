@@ -7,38 +7,39 @@ from keras_pipeline.preprocessing.image import read_image
 def _load_wider_object_tags():
     return {
         'blur': {
-            '0': {'id': 0, 'category': 'clear' , 'tag': 'blur'},
-            '1': {'id': 1, 'category': 'normal', 'tag': 'blur'},
-            '2': {'id': 2, 'category': 'heavy' , 'tag': 'blur'}
+            0: {'id': 0, 'category': 'clear' , 'tag': 'blur'},
+            1: {'id': 1, 'category': 'normal', 'tag': 'blur'},
+            2: {'id': 2, 'category': 'heavy' , 'tag': 'blur'}
         },
         'expression': {
-            '0': {'id': 0, 'category': 'typical'   , 'tag': 'expression'},
-            '1': {'id': 1, 'category': 'exaggerate', 'tag': 'expression'}
+            0: {'id': 0, 'category': 'typical'   , 'tag': 'expression'},
+            1: {'id': 1, 'category': 'exaggerate', 'tag': 'expression'}
         },
         'illumination': {
-            '0': {'id': 0, 'category': 'normal' , 'tag': 'expression'},
-            '1': {'id': 1, 'category': 'extreme', 'tag': 'expression'}
+            0: {'id': 0, 'category': 'normal' , 'tag': 'expression'},
+            1: {'id': 1, 'category': 'extreme', 'tag': 'expression'}
         },
         'occlusion': {
-            '0': {'id': 0, 'category': 'none' , 'tag': 'illumination'},
-            '1': {'id': 1, 'category': 'partial', 'tag': 'illumination'},
-            '2': {'id': 2, 'category': 'heavy' , 'tag': 'illumination'}
+            0: {'id': 0, 'category': 'none' , 'tag': 'illumination'},
+            1: {'id': 1, 'category': 'partial', 'tag': 'illumination'},
+            2: {'id': 2, 'category': 'heavy' , 'tag': 'illumination'}
         },
         'pose': {
-            '0': {'id': 0, 'category': 'typical' , 'tag': 'pose'},
-            '1': {'id': 1, 'category': 'atypical', 'tag': 'pose'}
+            0: {'id': 0, 'category': 'typical' , 'tag': 'pose'},
+            1: {'id': 1, 'category': 'atypical', 'tag': 'pose'}
         },
         'invalid': {
-            '0': {'id': 0, 'category': 'false', 'tag': 'invalid'},
-            '1': {'id': 1, 'category': 'true' , 'tag': 'invalid'}
+            0: {'id': 0, 'category': 'false', 'tag': 'invalid'},
+            1: {'id': 1, 'category': 'true' , 'tag': 'invalid'}
         },
     }
 
 def _get_object_classes(object_tags):
     object_classes = {}
     count_class = 0
-    for tag, tag_info in object_tags.items():
-        for class_info in tag.values():
+    for tag_info in object_tags.values():
+        for class_index in range(len(tag_info)):
+            class_info = tag_info[class_index]
             class_name = class_info['tag'] + '_' + class_info['category']
 
             class_info['id'] = count_class
@@ -46,6 +47,8 @@ def _get_object_classes(object_tags):
 
             object_classes[class_name] = class_info
             count_class += 1
+
+    return object_classes
 
 def _get_object_labels(object_classes):
     object_labels = {}

@@ -8,7 +8,7 @@ if __name__ == "__main__" and __package__ is None:
 
 from src.wider_dataset import WiderDataset
 
-wider = WiderDataset('/Users/visenze/Datasets/wider', 'val')
+wider = WiderDataset('wider', 'val')
 
 print(wider.object_classes)
 print(wider.object_labels)

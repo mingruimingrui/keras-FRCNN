@@ -327,33 +327,3 @@ def RetinaNet(config):
     prediction_model = RetinaNetFromTrain(training_model, config)
 
     return prediction_model
-
-    # # Extract input and pyramid level features from the model
-    # input = model.input
-    # features = [model.get_layer(l).output for l in ('P3', 'P4', 'P5', 'P6', 'P7')]
-    #
-    # # Get classification, regression and anchors
-    # classification, regression = model.output
-    # anchors = __build_anchors(
-    #     features,
-    #     sizes   = config.anchor_sizes,
-    #     strides = config.anchor_strides,
-    #     ratios  = config.anchor_ratios,
-    #     scales  = config.anchor_scales,
-    # )
-    #
-    # # Apply predicted regression to anchors
-    # boxes = layers.RegressBoxes(name='boxes')([anchors, regression])
-    # boxes = layers.ClipBoxes(name='clipped_boxes')([input, boxes])
-    #
-    # # Calculate detections
-    # detections = layers.FilterDetections(name='nms')([boxes, classification])
-    #
-    # # Define outputs
-    # outputs = detections
-    #
-    # return keras.Model(
-    #     inputs  = input,
-    #     outputs = outputs,
-    #     name    = config.name
-    # )

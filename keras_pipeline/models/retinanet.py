@@ -224,11 +224,10 @@ def RetinaNetTrain(config):
 
     """
     # Get input_tensor
-    input = config.get_input_tensor()
+    input = config.input_tensor
 
     # Generate pyramid features
-    backbone = load_backbone(input, backbone_name=config.backbone_name, freeze_backbone=config.freeze_backbone)
-    # _, _, C3, C4, C5 = backbone.output
+    backbone = load_backbone(config.input_shape, backbone_name=config.backbone_name, freeze_backbone=config.freeze_backbone)
     _, _, C3, C4, C5 = backbone(input)
     features = __build_pyramid_features(C3, C4, C5, feature_size=config.pyramid_feature_size)
 
@@ -328,33 +327,3 @@ def RetinaNet(config):
     prediction_model = RetinaNetFromTrain(training_model, config)
 
     return prediction_model
-
-    # # Extract input and pyramid level features from the model
-    # input = model.input
-    # features = [model.get_layer(l).output for l in ('P3', 'P4', 'P5', 'P6', 'P7')]
-    #
-    # # Get classification, regression and anchors
-    # classification, regression = model.output
-    # anchors = __build_anchors(
-    #     features,
-    #     sizes   = config.anchor_sizes,
-    #     strides = config.anchor_strides,
-    #     ratios  = config.anchor_ratios,
-    #     scales  = config.anchor_scales,
-    # )
-    #
-    # # Apply predicted regression to anchors
-    # boxes = layers.RegressBoxes(name='boxes')([anchors, regression])
-    # boxes = layers.ClipBoxes(name='clipped_boxes')([input, boxes])
-    #
-    # # Calculate detections
-    # detections = layers.FilterDetections(name='nms')([boxes, classification])
-    #
-    # # Define outputs
-    # outputs = detections
-    #
-    # return keras.Model(
-    #     inputs  = input,
-    #     outputs = outputs,
-    #     name    = config.name
-    # )

@@ -63,20 +63,20 @@ def get_events(data):
 
 def get_num_imgs(data):
     img_count = 0
-    
+
     for event_id, event in enumerate(get_events(data)):
         file_list = [str(f[0][0]) for f in data['file_list'][event_id, 0]]
         img_count += len(file_list)
-    
+
     return img_count
-    
+
 
 def get_img_infos(data):
     all_img_info = {}
     img_count = 0
-    
+
     with tqdm(total=get_num_imgs(data)) as pbar:
-    
+
         for event_id, event in enumerate(get_events(data)):
             file_list = [str(f[0][0]) for f in data['file_list'][event_id, 0]]
 
@@ -100,22 +100,21 @@ def get_img_infos(data):
                 # Update progress
                 img_count += 1
                 pbar.update(1)
-    
+
     return all_img_info
 
 
 def get_anns(data):
     all_img_to_anns = {}
-    all_anns = {}
     img_count = 0
     ann_count = 0
-    
+
     for event_id, event in enumerate(get_events(data)):
             file_list = [str(f[0][0]) for f in data['file_list'][event_id, 0]]
 
             for file_id, file_name in enumerate(file_list):
                 anns_for_img = []
-                
+
                 for ann_idx, ann in enumerate(data['face_bbx_list'][event_id, 0][file_id, 0]):
                     # Get ann info
                     ann_info = {
@@ -124,24 +123,23 @@ def get_anns(data):
                         'area'    : ann[2] * ann[3],
                         'bbox'    : ann.tolist(),
                     }
-                    
+
                     for tag in get_tags():
                         ann_info[tag] = data[tag + '_label_list'][event_id, 0][file_id, 0][ann_idx, 0]
-                    
+
                     # Store info
                     anns_for_img.append(ann_info)
-                    all_anns[ann_count] = ann_info
-                    
+
                     # Update progress
                     ann_count += 1
-                
+
                 # Store info
                 all_img_to_anns[img_count] = anns_for_img
-                
+
                 # Update progress
                 img_count += 1
-    
-    return all_img_to_anns, all_anns
+
+    return all_img_to_anns
 
 
 def save_json(data, file_path):
@@ -152,26 +150,27 @@ def save_json(data, file_path):
 def main():
     for dataset_name in DATASETS:
         json_filepath = os.path.join(ANNDIR, 'wider_face_{}.json'.format(dataset_name))
-        
+
         # Load data
-        data = loadmat(os.path.join(ANNDIR, 'wider_face_{}.mat'.format(dataset_name)))        
-        
+        data = loadmat(os.path.join(ANNDIR, 'wider_face_{}.mat'.format(dataset_name)))
+
         # Create template to store data later
         data_json = {}
-        
+
         data_json['labels'] = get_labels()
         data_json['tags']   = get_tags()
         data_json['events'] = get_events(data)
-        
+
         data_json['num_imgs']  = get_num_imgs(data)
         data_json['img_infos'] = get_img_infos(data)
-        
+
         if dataset_name != 'test':
-            data_json['img_to_Anns'], data_json['anns'] = get_anns(data)
-        
+            data_json['img_to_Anns'] = get_anns(data)
+
+        data_json['img_infos'] = append_anns_to_img(data_json['img_infos'], data_json['img_to_anns'])
+
         save_json(data_json, json_filepath)
 
 
 if __name__ == '__main__':
     main()
-

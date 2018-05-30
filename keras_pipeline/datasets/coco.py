@@ -8,7 +8,7 @@ from ..preprocessing.image import read_image
 
 class COCODataset(ImageDatasetTemplate):
     """ COCO dataset API meant to be used by generators.DetectionGenerator
-    Required your coco dataset to be setup in the following format
+    Requires your coco dataset to be setup in the following format
 
     root_dir
       |- images

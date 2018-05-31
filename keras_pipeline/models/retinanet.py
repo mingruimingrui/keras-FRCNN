@@ -203,6 +203,19 @@ def __build_pyramid_features(C3, C4, C5, feature_size=256):
 
 
 def load_backbone(input_tensor, backbone_name='inception_v3', freeze_backbone=False):
+    """ Loads a pretrained backbone model with input_tensor as the entry point
+    Dataset used is imagenet (preprocessing of inputs are also defined in their respective papers)
+
+    Args
+        input_tensor    : Tensor used as input to the backbone model
+        backbone_name   : Name of the backbone model to load (only inception_v3 implemented at this moment)
+        freeze_backbone : Flag used to freeze backbone weights
+
+    Returns
+        A backbone model with input_tensor as the entry point
+
+    """
+    # TODO: Make a file used to load backbone and store this function
     assert backbone_name in ['inception_v3'], 'Only inception model support currently'
 
     if backbone_name == 'inception_v3':
@@ -216,7 +229,7 @@ def RetinaNetTrain(config):
     """ Build a retinanet model for training
 
     Args
-        config - A RetinaNetConfig object, refer to
+        config : A RetinaNetConfig object, refer to
                  keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
     Returns
@@ -227,8 +240,12 @@ def RetinaNetTrain(config):
     input = config.input_tensor
 
     # Generate pyramid features
-    backbone = load_backbone(config.input_shape, backbone_name=config.backbone_name, freeze_backbone=config.freeze_backbone)
-    _, _, C3, C4, C5 = backbone(input)
+    backbone = load_backbone(
+        input_tensor    = keras.Input(shape=config.input_shape),
+        backbone_name   = config.backbone_name,
+        freeze_backbone = config.freeze_backbone
+    )
+    _, _, C3, C4, C5 = backbone(input) # we implement backbone as a model to make plotting easier
     features = __build_pyramid_features(C3, C4, C5, feature_size=config.pyramid_feature_size)
 
     # Create classification and regression models
@@ -271,8 +288,8 @@ def RetinaNetFromTrain(model, config):
     """ Build a retinanet model for inference from a training model
 
     Args
-        model  - A RetinaNetTrain model
-        config - A RetinaNetConfig object, refer to
+        model  : A RetinaNetTrain model
+        config : A RetinaNetConfig object, refer to
                  keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
     Returns
@@ -315,7 +332,7 @@ def RetinaNet(config):
     """ Build a retinanet model for inference
 
     Args
-        config - A RetinaNetConfig object, refer to
+        config : A RetinaNetConfig object, refer to
                  keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
     Returns

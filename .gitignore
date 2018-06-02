@@ -108,4 +108,4 @@ log
 snapshot
 
 # Disable all jupyter-notebooks for now
-*.ipynb
+DEBUG.ipynb

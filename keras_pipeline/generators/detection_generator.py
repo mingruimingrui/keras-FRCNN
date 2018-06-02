@@ -76,9 +76,6 @@ def _validate_dataset(dataset):
     dataset.load_annotations(img_id)
     dataset.load_annotations_array(img_id)
 
-    name = dataset.label_to_object_class(0)
-    dataset.object_class_to_label(name)
-
 def _validate_config(config):
     """ Validates that config is suitable for a detection task """
     assert config.compute_anchors is not None, 'For detection and segmentation tasks, compute_anchors is required.'

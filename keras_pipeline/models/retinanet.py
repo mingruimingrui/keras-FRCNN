@@ -4,6 +4,7 @@ import numpy as np
 
 import keras
 from .. import layers
+from .load_backbone import load_backbone
 
 
 def default_classification_model(
@@ -200,29 +201,6 @@ def __build_pyramid_features(C3, C4, C5, feature_size=256):
     P7 = keras.layers.Conv2D(feature_size, kernel_size=3, strides=2, padding='same', name='P7')(P7)
 
     return P3, P4, P5, P6, P7
-
-
-def load_backbone(input_tensor, backbone_name='inception_v3', freeze_backbone=False):
-    """ Loads a pretrained backbone model with input_tensor as the entry point
-    Dataset used is imagenet (preprocessing of inputs are also defined in their respective papers)
-
-    Args
-        input_tensor    : Tensor used as input to the backbone model
-        backbone_name   : Name of the backbone model to load (only inception_v3 implemented at this moment)
-        freeze_backbone : Flag used to freeze backbone weights
-
-    Returns
-        A backbone model with input_tensor as the entry point
-
-    """
-    # TODO: Make a file used to load backbone and store this function
-    assert backbone_name in ['inception_v3'], 'Only inception model support currently'
-
-    if backbone_name == 'inception_v3':
-        from .inception import InceptionV3Backbone
-        backbone = InceptionV3Backbone(input_tensor, freeze_backbone=freeze_backbone)
-
-    return backbone
 
 
 def RetinaNetTrain(config):

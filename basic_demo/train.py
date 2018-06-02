@@ -54,9 +54,10 @@ def create_callback(training_model, prediction_model, validation_generator, args
         checkpoint = keras.callbacks.ModelCheckpoint(
             os.path.join(
                 args.snapshot_path,
-                'Inception_COCO_{{epoch:02d}}.h5'
+                'retinanet_inception_coco_{{epoch:02d}}.h5'
             ),
             verbose=1,
+            save_weights_only=True
             # save_best_only=True,
             # monitor="mAP",
             # mode='max'
@@ -104,6 +105,11 @@ def make_generators(train_set, validation_set, backbone_name, compute_anchors, a
     validation_generator = DetectionGenerator(validation_generator_config)
 
     return train_generator, validation_generator
+
+
+def save_model(model, file_name='retinanet_inception_coco.json'):
+    with open(file_name, 'w') as f:
+        f.write(model.to_json())
 
 
 def make_models(model_config, args):
@@ -220,6 +226,7 @@ def main():
     print('\n==== Making Model ====')
     print('This can take a while...')
     training_model, prediction_model = make_models(model_config, args)
+    save_model(training_model)
     print('Model created')
 
     # Make the training and validation set generator
@@ -234,8 +241,6 @@ def main():
         args = args
     )
     print('Data Generators created')
-
-    sys.exit('DEBUG')
 
     # Create callback
     callbacks = create_callback(training_model, prediction_model, validation_generator, args)

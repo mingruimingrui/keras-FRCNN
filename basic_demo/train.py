@@ -182,9 +182,6 @@ def parse_args(args):
         type=str)
 
     # Logging params
-    parser.add_argument('--visualize-model',
-        help='Flag to plot model out as a graph',
-        action='store_true')
     parser.add_argument('--snapshot-path',
         help='Path to store snapshots of model during training',
         default='./snapshot')
@@ -197,6 +194,9 @@ def parse_args(args):
     parser.add_argument('--no-evaluation',
         help='Disable per epoch evaluation',
         dest='evaluation', action='store_false')
+    parser.add_argument('--visualize-model',
+        help='Flag to plot model out as a graph',
+        action='store_true')
 
     # Additional parameters
     parser.add_argument('--freeze-backbone',
@@ -231,7 +231,7 @@ def main():
 
     # Make the training and validation set generator
     # The reason why we create model first is because we need to know
-    # how to create anchors and preprocess image
+    # how to create anchors and preprocess image (based on backbone)
     print('\n==== Making Data Generators ====')
     print('This can take a while...')
     train_generator, validation_generator = make_generators(

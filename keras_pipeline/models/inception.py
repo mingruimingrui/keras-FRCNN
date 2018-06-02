@@ -1,9 +1,9 @@
 import keras
 
 
-def InceptionV3(input_tensor, freeze_backbone=False):
-    """Loads an inception v3 model without top"""
-    inception_model = keras.applications.inception_v3.InceptionV3(include_top=False, input_tensor=input_tensor)
+def InceptionV3(input_tensor, include_top=True, freeze_backbone=False):
+    """ Loads an inception v3 model """
+    inception_model = keras.applications.inception_v3.InceptionV3(input_tensor=input_tensor, include_top=include_top)
 
     for layer in inception_model.layers:
         if 'normalization' in layer.name:
@@ -16,9 +16,9 @@ def InceptionV3(input_tensor, freeze_backbone=False):
     return inception_model
 
 
-def InceptionBackbone(input_tensor, freeze_backbone=False):
-    """Loads an inception v3 model as a backbone"""
-    inception_model = InceptionV3(input_tensor, freeze_backbone=freeze_backbone)
+def InceptionV3Backbone(input_tensor, freeze_backbone=False):
+    """ Loads an inception v3 model as a backbone """
+    inception_model = InceptionV3(input_tensor, include_top=False, freeze_backbone=freeze_backbone)
 
     mix_layer_names  = [l.name for l in inception_model.layers if 'mixed'  in l.name]
     conv_layer_names = [l.name for l in inception_model.layers if 'conv2d' in l.name]

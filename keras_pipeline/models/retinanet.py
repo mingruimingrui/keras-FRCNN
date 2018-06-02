@@ -219,8 +219,8 @@ def load_backbone(input_tensor, backbone_name='inception_v3', freeze_backbone=Fa
     assert backbone_name in ['inception_v3'], 'Only inception model support currently'
 
     if backbone_name == 'inception_v3':
-        from .inception import InceptionBackbone
-        backbone = InceptionBackbone(input_tensor, freeze_backbone=freeze_backbone)
+        from .inception import InceptionV3Backbone
+        backbone = InceptionV3Backbone(input_tensor, freeze_backbone=freeze_backbone)
 
     return backbone
 

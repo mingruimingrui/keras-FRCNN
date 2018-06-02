@@ -104,8 +104,8 @@ venv.bak/
 .mypy_cache/
 
 # log and snapshots
-log
+logs
 snapshot
 
-# Disable all jupyter-notebooks for now
-DEBUG.ipynb
+# Debug scripts
+debug*

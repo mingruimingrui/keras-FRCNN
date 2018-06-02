@@ -107,23 +107,24 @@ def make_generators(train_set, validation_set, backbone_name, compute_anchors, a
     return train_generator, validation_generator
 
 
-def save_model(model, file_name='retinanet_inception_coco.json'):
-    with open(file_name, 'w') as f:
-        f.write(model.to_json())
-
-
 def make_models(model_config, args):
+    # Make model based on config
     training_model = RetinaNetTrain(model_config)
     prediction_model = RetinaNetFromTrain(training_model, model_config)
 
+    # Visualize model
     if args.visualize_model:
         from keras.utils import plot_model
         plot_model(prediction_model, to_file='model.png')
+
+    # Print model
+    training_model.summary()
 
     return training_model, prediction_model
 
 
 def load_datasets(args):
+    # Load dataset information
     train_set   = COCODataset(args.coco_path, 'train2017')
     validation_set = COCODataset(args.coco_path, 'val2017')
 
@@ -226,7 +227,6 @@ def main():
     print('\n==== Making Model ====')
     print('This can take a while...')
     training_model, prediction_model = make_models(model_config, args)
-    save_model(training_model)
     print('Model created')
 
     # Make the training and validation set generator

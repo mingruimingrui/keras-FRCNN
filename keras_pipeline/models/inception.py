@@ -5,6 +5,10 @@ def InceptionV3(input_tensor, freeze_backbone=False):
     """Loads an inception v3 model without top"""
     inception_model = keras.applications.inception_v3.InceptionV3(include_top=False, input_tensor=input_tensor)
 
+    for layer in inception_model.layers:
+        if 'normalization' in layer.name:
+            layer.trainable = False
+
     if freeze_backbone:
         for layer in inception_model.layers:
             layer.trainable = False

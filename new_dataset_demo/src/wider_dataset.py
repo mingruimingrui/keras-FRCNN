@@ -132,7 +132,7 @@ class WiderDataset(ImageDatasetTemplate):
         return self.image_infos[image_index]['aspect_ratio']
 
     def get_num_object_classes(self):
-        return len(self.object_classes)
+        return len(self.object_tags)
 
     def load_image(self, image_index):
         file_path = self.image_infos[image_index]['file_path']
@@ -164,8 +164,8 @@ class WiderDataset(ImageDatasetTemplate):
         else:
             return np.zeros((0, 5))
 
-    def object_class_to_object_class_id(self, name):
-        return self.object_classes[name]['id']
+    def object_tag_to_object_tag_id(self, name):
+        return self.object_tags[name]['id']
 
-    def object_class_id_to_object_class(self, id):
-        return self.object_classes_id[id]['name']
+    def object_tag_id_to_object_tag(self, id):
+        return self.object_tags_id[id]['name']

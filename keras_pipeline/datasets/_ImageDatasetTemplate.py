@@ -1,4 +1,6 @@
 """ Template used for image datasets (no functions actually implemented)
+This is merely a guide to what an ImageDataset class should look like
+
 Should be an API interface to load images and other corresponding information from a locally existing dataset
 Think of pycocotools but capable of loading images as well
 
@@ -41,6 +43,7 @@ class ImageDatasetTemplate:
     def load_image_info(self, image_index):
         """ If this is a classification task this needs to have the following attributes
         category_id : corresponding to the image class labels
+                      (though this is mainly to help implement load_image_class_array)
         """
         raise NotImplementedError('load_image_info method not implemented')
 
@@ -52,13 +55,14 @@ class ImageDatasetTemplate:
     def load_image_class_array(self, image_index):
         raise NotImplementedError('load_image_class_array method not implemented')
 
-    def image_class_to_label(self, name):
-        # label is like an index needs to range from 0 to num_class
-        raise NotImplementedError('image_class_to_label method not implemented')
-
-    def label_to_image_class(self, label):
-        # label is like an index needs to range from 0 to num_class
-        raise NotImplementedError('label_to_image_class method not implemented')
+    # These are not necessary but good to have
+    # def image_class_to_label(self, name):
+    #     # label is like an index needs to range from 0 to num_class
+    #     raise NotImplementedError('image_class_to_label method not implemented')
+    #
+    # def label_to_image_class(self, label):
+    #     # label is like an index needs to range from 0 to num_class
+    #     raise NotImplementedError('label_to_image_class method not implemented')
 
 
     """ Object detection/segmentation specific required functions """
@@ -69,6 +73,7 @@ class ImageDatasetTemplate:
         """ Returns a list of annotations for image with the image_index
         each annotation needs to have the following attributes
             category_id : corresponding to the object class labels
+                          (though this is mainly to help implement load_annotations_array)
             bbox        : in [x, y, w, h] format
         """
         raise NotImplementedError('load_annotations method not implemented')
@@ -79,10 +84,9 @@ class ImageDatasetTemplate:
         """
         raise NotImplementedError('load_annotations_array method not implemented')
 
-    def object_class_to_label(self, name):
-        # label is like an index needs to range from 0 to num_class
-        raise NotImplementedError('object_class_to_label method not implemented')
-
-    def label_to_object_class(self, label):
-        # label is like an index needs to range from 0 to num_class
-        raise NotImplementedError('label_to_object_class method not implemented')
+    # These are not necessary but good to have
+    # def object_class_to_object_class_id(self, name):
+    #     raise NotImplementedError('object_class_to_object_class_id method not implemented')
+    #
+    # def object_class_id_to_object_class(self, id):
+    #     raise NotImplementedError('object_class_id_to_object_class method not implemented')

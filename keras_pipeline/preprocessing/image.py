@@ -24,9 +24,9 @@ def preprocess_image_resnet(x):
 
 
 def preprocess_image(x, backbone):
-    if 'inception' in backbone:
+    if 'inception_v3' == backbone:
         return preprocess_image_inception(x)
-    elif 'resnet' in backbone:
+    elif 'resnet50' == backbone:
         return preprocess_image_resnet(x)
     else:
         raise NotImplementedError("Your backbone {} has not been implemented".format(backbone))

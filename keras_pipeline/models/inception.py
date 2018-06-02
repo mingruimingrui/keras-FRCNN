@@ -23,9 +23,6 @@ def InceptionV3Backbone(input_tensor, freeze_backbone=False):
     mix_layer_names  = [l.name for l in inception_model.layers if 'mixed'  in l.name]
     conv_layer_names = [l.name for l in inception_model.layers if 'conv2d' in l.name]
 
-    layer_names = [l.name for l in inception_model.layers]
-    mix_layer_names = [l for l in layer_names if 'mixed' in l]
-
     C1 = inception_model.get_layer(conv_layer_names[ 1]).output
     C2 = inception_model.get_layer(conv_layer_names[ 4]).output
     C3 = inception_model.get_layer(mix_layer_names [ 2]).output

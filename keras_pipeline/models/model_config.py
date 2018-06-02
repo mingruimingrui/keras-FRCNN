@@ -80,7 +80,7 @@ class RetinaNetConfig(ConfigTemplate):
             'backbone_name',
             'Loads a backbone based on a name',
             default = 'inception_v3',
-            valid_options = ['inception_v3']
+            valid_options = ['inception_v3', 'resnet50']
         )
 
         self.add(
@@ -182,6 +182,18 @@ class RetinaNetConfig(ConfigTemplate):
             P3_shape = np.ceil((C2_shape - 2) / 2)
             P4_shape = np.ceil((P3_shape - 2) / 2)
             P5_shape = np.ceil((P4_shape - 2) / 2)
+
+            P6_shape = np.ceil(P5_shape / 2)
+            P7_shape = np.ceil(P6_shape / 2)
+
+        elif self.backbone_name is 'resnet50':
+            C1_shape = np.ceil(C0_shape / 2)
+            C2_shape = np.floor(C1_shape / 2)
+
+            P3_shape = np.ceil(C2_shape / 2)
+            P4_shape = np.ceil(P3_shape / 2)
+            P5_shape = np.ceil(P4_shape / 2)
+
             P6_shape = np.ceil(P5_shape / 2)
             P7_shape = np.ceil(P6_shape / 2)
 

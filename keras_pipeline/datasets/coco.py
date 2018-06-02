@@ -41,16 +41,16 @@ class COCODataset(ImageDatasetTemplate):
         coco = COCO(annotation_file)
 
         # Retrieve object class information
-        # Here object_labels  is like label to class_name
-        #      object_classes is like class_name to label
-        # It is also important that label number starts from 0 and ends at num_object_classes
-        coco_label_to_label = {}
-        self.object_labels  = {}
-        self.object_classes = {}
+        # Here object_classes_id  is like id to class_name
+        #      object_classes     is like class_name to id
+        # It is also important that id number starts from 0 and ends at num_object_classes
+        coco_id_to_id          = {}
+        self.object_classes_id = {}
+        self.object_classes    = {}
         for id, class_info in enumerate(coco.cats.values()):
-            coco_label_to_label[class_info['id']] = id
+            coco_id_to_id[class_info['id']] = id
             class_info['id'] = id
-            self.object_labels [id]                 = class_info
+            self.object_classes_id [id]             = class_info
             self.object_classes[class_info['name']] = class_info
 
         # Store image information which also includes the associated annotations
@@ -70,8 +70,8 @@ class COCODataset(ImageDatasetTemplate):
             # Edit and store annotations
             image_annotations = coco.imgToAnns[image_index]
             for i in range(len(image_annotations)):
-                coco_label = image_annotations[i]['category_id']
-                image_annotations[i]['category_id'] = coco_label_to_label[coco_label]
+                coco_id = image_annotations[i]['category_id']
+                image_annotations[i]['category_id'] = coco_id_to_id[coco_id]
             image_info['annotations'] = image_annotations
 
             # Calculate aspect_ratio
@@ -112,8 +112,8 @@ class COCODataset(ImageDatasetTemplate):
         else:
             return np.zeros((0, 5))
 
-    def object_class_to_label(self, name):
+    def object_class_to_object_class_id(self, name):
         return self.object_classes[name]['id']
 
-    def label_to_object_class(self, label):
-        return self.object_labels[label]['name']
+    def object_class_id_to_object_class(self, id):
+        return self.object_classes_id[id]['name']

@@ -17,9 +17,9 @@ class GeneratorConfig(ConfigTemplate):
 
         self.add(
             'dataset',
-            'Dataset for this generator, must be super type ImageDatasetTemplate',
+            'Dataset for this generator',
             required = True,
-            condition = lambda x: issubclass(type(x), ImageDatasetTemplate)
+            condition = lambda x: hasattr(x, 'load_annotations_array')
         )
 
         self.add(

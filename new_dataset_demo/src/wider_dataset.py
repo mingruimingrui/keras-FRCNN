@@ -11,36 +11,44 @@ from keras_pipeline.datasets._ImageDatasetTemplate import ImageDatasetTemplate
 from keras_pipeline.preprocessing.image import read_image
 
 
-def _get_object_classes_and_labels(tag_label_object):
-    all_object_classes = {}
-    all_object_labels  = {}
-    old_tag_label_to_new_label = {}
+def _get_object_tags_and_id(wider_annotation_desc):
+    # Create empty dictionary of things to return
+    all_object_tags    = {}
+    all_object_tags_id = {}
+    old_tag_id_to_new_id  = {} # supposed to use this like old_tag_id_to_new_id[tag_name][label_id] -> new_id
 
-    label_counter = 0
-    for tag_name in ['blur', 'expression', 'illumination', 'occlusion', 'pose']:
-        labels = tag_label_object[tag_name]
-        old_label_to_new_label = {}
+    id_counter = 0
 
-        for index in range(len(labels)):
-            label_info = labels[str(index)]
+    # Start of single loop for occlusion
+    # TODO: to include everything
+    tag_name = 'occlusion'
+    tag_desc = wider_annotation_desc[tag_name]
+    old_id_to_new_id = {}
 
-            old_label_to_new_label[label_info['id']] = label_counter
+    for label_name, label_info in tag_desc.items():
+        # We still have to store the old id to new id link to help transform image_info annotations
+        old_id_to_new_id[label_info['id']] = id_counter
 
-            label_info['id']    = label_counter
-            label_info['label'] = label_info['name']
-            label_info['name']  = tag_name + '_' + label_info['label']
+        # Edit label info to new format
+        label_info['id']    = id_counter
+        label_info['name']  = '{}_{}'.format(tag_name, label_name)
+        label_info['label'] = label_name
 
-            all_object_classes[label_info['name']] = label_info
-            all_object_labels[label_info['id']]    = label_info
+        # Streo info
+        all_object_tags[label_info['name']]  = label_info
+        all_object_tags_id[label_info['id']] = label_info
 
-            label_counter += 1
+        id_counter += 1
 
-        old_tag_label_to_new_label[tag_name] = old_label_to_new_label
+    old_tag_id_to_new_id['occlusion'] = old_id_to_new_id
+    # Start of single loop for occlusion
 
-    return all_object_classes, all_object_labels, old_tag_label_to_new_label
+    return all_object_tags, all_object_tags_id, old_tag_id_to_new_id
 
-def _reformat_image_info(image_infos, old_tag_label_to_new_label):
+
+def _reformat_image_info(image_infos, old_tag_id_to_new_id):
     """ This currently filters annotations and reformats image_id """
+    new_image_id_counter = 0
     new_image_infos = {}
 
     for current_id in image_infos.keys():
@@ -50,28 +58,19 @@ def _reformat_image_info(image_infos, old_tag_label_to_new_label):
         # First filter annotations
         current_info['annotations'] = [ann for ann in current_info['annotations'] if ann['invalid'] == 0]
         for i in range(len(current_info['annotations'])):
-            category_id = []
+            label_ids = []
             ann = current_info['annotations'][i]
 
-            for tag_name in ['blur', 'expression', 'illumination', 'occlusion', 'pose']:
-                category_id.append(old_tag_label_to_new_label[tag_name][ann[tag_name]])
+            for tag_name in ['occlusion']: # TODO: to include everything
+                label_ids.append(old_tag_id_to_new_id[tag_name][ann[tag_name]])
 
-            current_info['annotations'][i]['category_id'] = category_id
+            current_info['annotations'][i]['label_ids'] = label_ids
 
-        # Now to reformat image_id
-        # Get even and file path
-        event     = current_info['event']
-        file_path = current_info['file_path']
-
-        # Extract data from them to forge new_id
-        event_id = int(event.split('-')[0])
-        img_number = int(os.path.splitext(file_path)[0].split('_')[-1])
-
-        new_id = 10000 * event_id + img_number
-
-        # store infor with new id in new_iamge_infos
-        current_info['id'] = new_id
-        new_image_infos[new_id] = current_info
+        # store info with new id in new_image_infos
+        current_info['id'] = new_image_id_counter
+        assert new_image_id_counter not in new_image_infos, 'image_id will overlap'
+        new_image_infos[new_image_id_counter] = current_info
+        new_image_id_counter += 1
 
     return new_image_infos
 
@@ -111,11 +110,11 @@ class WiderDataset(ImageDatasetTemplate):
         # Here object_labels  is like label to class_name
         #      object_classes is like class_name to label
         # It is also important that label number starts from 0 and ends at num_object_classes
-        self.object_classes, self.object_labels, old_tag_label_to_new_label = \
-            _get_object_classes_and_labels(wider['labels'])
+        self.object_tags, self.object_tags_id, old_tag_id_to_new_id = \
+            _get_object_tags_and_id(wider['labels'])
 
         # Now get image infos
-        self.image_infos = _reformat_image_info(wider['image_infos'], old_tag_label_to_new_label)
+        self.image_infos = _reformat_image_info(wider['image_infos'], old_tag_id_to_new_id)
 
         # raise NotImplementedError('Dataset not implemented')
 
@@ -159,12 +158,14 @@ class WiderDataset(ImageDatasetTemplate):
         """ Returns the annotations in an array format of shape (num_annotes, 5)
         for each annote, the order should be [x, y, w, h, object_class]
         """
-        raise NotImplementedError('load_annotations_array method not implemented')
+        annotations = self.load_annotations(image_index)
+        if len(annotations) > 0:
+            return np.array([ann['bbox'] + [ann['label_ids'][0]] for ann in annotations])
+        else:
+            return np.zeros((0, 5))
 
-    def object_class_to_label(self, name):
-        # label is like an index needs to range from 0 to num_class
-        raise NotImplementedError('object_class_to_label method not implemented')
+    def object_class_to_object_class_id(self, name):
+        return self.object_classes[name]['id']
 
-    def label_to_object_class(self, label):
-        # label is like an index needs to range from 0 to num_class
-        raise NotImplementedError('label_to_object_class method not implemented')
+    def object_class_id_to_object_class(self, id):
+        return self.object_classes_id[id]['name']

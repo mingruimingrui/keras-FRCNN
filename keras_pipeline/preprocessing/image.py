@@ -13,35 +13,14 @@ def read_image(path):
     return np.asarray(Image.open(path).convert('RGB'))
 
 
-def read_image_bgr(path):
-    image = np.asarray(Image.open(path).convert('RGB'))
-    return image[:, :, ::-1].copy()
-
-
 def preprocess_image_inception(x):
     x = x.astype(keras.backend.floatx())
-    return (x / 255 * 2) - 1
+    return keras.applications.inception_v3.preprocess_input(x)
 
 
 def preprocess_image_resnet(x):
-    # mostly identical to "https://github.com/fchollet/keras/blob/master/keras/applications/imagenet_utils.py"
-    # except for converting RGB -> BGR since we assume BGR already
     x = x.astype(keras.backend.floatx())
-    if keras.backend.image_data_format() == 'channels_first':
-        if x.ndim == 3:
-            x[0, :, :] -= 103.939
-            x[1, :, :] -= 116.779
-            x[2, :, :] -= 123.68
-        else:
-            x[:, 0, :, :] -= 103.939
-            x[:, 1, :, :] -= 116.779
-            x[:, 2, :, :] -= 123.68
-    else:
-        x[..., 0] -= 103.939
-        x[..., 1] -= 116.779
-        x[..., 2] -= 123.68
-
-    return x
+    return keras.applications.resnet50.preprocess_input(x)
 
 
 def preprocess_image(x, backbone):

@@ -16,15 +16,20 @@ def makedirs(path):
 
 
 if __name__ == '__main__':
-    makedirs('logs')
-
+    # Get current working directory
     cwd = os.path.dirname(os.path.abspath(__file__))
+
+    # Make logging files
+    makedirs('logs')
     log_file = open('logs/log_daemon.log', 'w+')
     err_file = open('logs/err_daemon.log', 'w+')
 
+    # Start daemon
     with daemon.DaemonContext(working_directory=cwd, stdout=log_file, stderr=err_file):
         print('Daemon started with PID {}'.format(os.getpid()))
+        print('Outputs stored to logs/')
 
+        # Save PID to file
         with open('pid', 'w') as f:
             f.write(str(os.getpid()))
             print('PID saved to file')

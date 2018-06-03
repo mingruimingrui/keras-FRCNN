@@ -26,7 +26,7 @@ class GeneratorConfig(ConfigTemplate):
             'backbone_name',
             'Name of the backbone to your model (used to determine preprocessing to perform)',
             required = True,
-            valid_options = ['inception_v3']
+            valid_options = ['inception_v3', 'resnet50']
         )
 
         self.add(

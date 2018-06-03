@@ -16,6 +16,14 @@ def makedirs(path):
 
 
 if __name__ == '__main__':
+    # Ask for user confirmation before proceeding with daemonisation
+    print('You are about to start train.py as a service')
+    sys.stdout.write('Are you sure? Y|[N]: ')
+    sys.stdout.flush()
+    res = sys.stdin.readline().rstrip()
+    if res.lower() != 'y':
+        sys.exit('Aborting daemon_train.py')
+
     # Get current working directory
     cwd = os.path.dirname(os.path.abspath(__file__))
 

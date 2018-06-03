@@ -9,12 +9,17 @@ if __name__ == "__main__" and __package__ is None:
 
 from train import main
 
-with daemon.DaemonContext():
-    print('Daemon started with PID {}'.format(os.getpid()))
 
-    with open('pid') as f:
-        f.write(os.getpid())
-        print('PID saved to file')
+if __name__ == '__main__':
+    cwd = os.path.dirname(os.path.abspath(__file__))
+    log_file = open('daemon.log', 'w+')
 
-    print('Running main program')
-    main()
+    with daemon.DaemonContext(working_directory=cwd, stdout=log_file):
+        print('Daemon started with PID {}'.format(os.getpid()))
+
+        with open('pid') as f:
+            f.write(os.getpid())
+            print('PID saved to file')
+
+        print('Running main program')
+        main()

@@ -54,7 +54,7 @@ def create_callback(training_model, prediction_model, validation_generator, args
         checkpoint = keras.callbacks.ModelCheckpoint(
             os.path.join(
                 args.snapshot_path,
-                'retinanet_inception_coco_{{epoch:02d}}.h5'
+                'retinanet_resnet_coco_{epoch:02d}.h5'
             ),
             verbose=1,
             save_weights_only=True
@@ -90,7 +90,8 @@ def make_generators(train_set, validation_set, backbone_name, compute_anchors, a
         backbone_name = backbone_name,
         compute_anchors = compute_anchors,
         batch_size = args.batch_size,
-        allow_transform = True
+        allow_transform = True,
+        shuffle_groups = True
     )
 
     train_generator = DetectionGenerator(train_generator_config)
@@ -215,13 +216,13 @@ def main():
     args = get_args(sys.argv[1:])
     setup()
 
-    print('\n==== Begining training of the demo retinanet model ====')
+    print('\n==== Starting train.py ====')
 
     # Load dataset information
     train_set, validation_set = load_datasets(args)
 
     # Create a model config object to store information on model
-    model_config = RetinaNetConfig(num_classes = train_set.get_num_object_classes())
+    model_config = RetinaNetConfig(backbone_name='resnet50', num_classes = train_set.get_num_object_classes())
 
     # Make model
     print('\n==== Making Model ====')

@@ -27,6 +27,13 @@ def makedirs(path):
         os.makedirs(path)
 
 
+def determine_initial_epoch(args):
+    if args.snapshot:
+        initial_epoch os.path.splitext(args.snapshot)[0].split('_')[-1]
+        return int(initial_epoch)
+    return 0
+
+
 def create_callback(training_model, prediction_model, validation_generator, args):
     callbacks = []
 
@@ -54,7 +61,7 @@ def create_callback(training_model, prediction_model, validation_generator, args
         checkpoint = keras.callbacks.ModelCheckpoint(
             os.path.join(
                 args.snapshot_path,
-                'retinanet_resnet_coco_{epoch:02d}.h5'
+                'retinanet_vgg_coco_{epoch:02d}.h5'
             ),
             verbose=1,
             save_weights_only=True
@@ -111,6 +118,11 @@ def make_generators(train_set, validation_set, backbone_name, compute_anchors, a
 def make_models(model_config, args):
     # Make model based on config
     training_model = RetinaNetTrain(model_config)
+
+    # Load weights if snapshot provided
+    if args.snapshot:
+        training_model.load_weights(args.snapshot)
+
     prediction_model = RetinaNetFromTrain(training_model, model_config)
 
     # Visualize model
@@ -168,8 +180,8 @@ def parse_args(args):
 
     # Resume training / load weights
     # TODO: Allow resumption of training and loading of weights
-    # parser.add_argument('--snapshot',
-    #     help='Resume training from a snapshot file')
+    parser.add_argument('--snapshot',
+        help='Resume training from a snapshot file')
 
     # Most frequently used params
     parser.add_argument('--num-gpu',
@@ -222,7 +234,7 @@ def main():
     train_set, validation_set = load_datasets(args)
 
     # Create a model config object to store information on model
-    model_config = RetinaNetConfig(backbone_name='resnet50', num_classes = train_set.get_num_object_classes())
+    model_config = RetinaNetConfig(num_classes = train_set.get_num_object_classes())
 
     # Make model
     print('\n==== Making Model ====')
@@ -248,12 +260,14 @@ def main():
 
     # start_training
     print('\n==== Training Model ====')
+    initial_epoch = determine_initial_epoch(args)
     training_model.fit_generator(
         generator=train_generator,
         steps_per_epoch=10000,
         epochs=50,
         verbose=1,
         callbacks=callbacks,
+        initial_epoch=initial_epoch,
     )
 
 

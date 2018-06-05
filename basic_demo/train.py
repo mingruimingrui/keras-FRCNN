@@ -29,7 +29,7 @@ def makedirs(path):
 
 def determine_initial_epoch(args):
     if args.snapshot:
-        initial_epoch os.path.splitext(args.snapshot)[0].split('_')[-1]
+        initial_epoch = os.path.splitext(args.snapshot)[0].split('_')[-1]
         return int(initial_epoch)
     return 0
 

@@ -20,6 +20,9 @@ def load_backbone(input_tensor, backbone_name='inception_v3', freeze_backbone=Fa
     elif backbone_name == 'resnet50':
         from .resnet import ResNet50Backbone
         backbone = ResNet50Backbone(input_tensor, freeze_backbone=freeze_backbone)
+    else backbone_name == 'vgg16':
+        from .vgg import VGG16Backbone
+        backbone = VGG16Backbone(input_tensor, freeze_backbone=freeze_backbone)
     else:
         raise Exception('{} is invalid backbone_name'.format(self.backbone_name))
 

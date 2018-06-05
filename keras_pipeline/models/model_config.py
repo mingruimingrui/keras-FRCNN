@@ -79,8 +79,8 @@ class RetinaNetConfig(ConfigTemplate):
         self.add(
             'backbone_name',
             'Loads a backbone based on a name',
-            default = 'inception_v3',
-            valid_options = ['inception_v3', 'resnet50']
+            default = 'vgg16',
+            valid_options = ['inception_v3', 'resnet50', 'vgg16']
         )
 
         self.add(
@@ -196,6 +196,17 @@ class RetinaNetConfig(ConfigTemplate):
 
             P6_shape = np.ceil(P5_shape / 2)
             P7_shape = np.ceil(P6_shape / 2)
+
+        elif self.backbone_name is 'vgg16':
+            C1_shape = np.floor(C0_shape / 2)
+            C2_shape = np.floor(C1_shape / 2)
+
+            P3_shape = np.floor(C2_shape / 2)
+            P4_shape = np.floor(P3_shape / 2)
+            P5_shape = np.floor(P4_shape / 2)
+
+            P6_shape = np.floor(P5_shape / 2)
+            P7_shape = np.floor(P6_shape / 2)
 
         else:
             raise Exception('{} is invalid backbone_name'.format(self.backbone_name))

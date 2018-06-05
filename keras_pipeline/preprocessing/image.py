@@ -23,11 +23,18 @@ def preprocess_image_resnet(x):
     return keras.applications.resnet50.preprocess_input(x)
 
 
+def preprocess_image_vgg(x):
+    x = x.astype(keras.backend.floatx())
+    return keras.applications.vgg16.preprocess_input(x)
+
+
 def preprocess_image(x, backbone):
     if 'inception_v3' == backbone:
         return preprocess_image_inception(x)
     elif 'resnet50' == backbone:
         return preprocess_image_resnet(x)
+    elif 'vgg16' == backbone:
+        return preprocess_image_vgg(x)
     else:
         raise NotImplementedError("Your backbone {} has not been implemented".format(backbone))
 

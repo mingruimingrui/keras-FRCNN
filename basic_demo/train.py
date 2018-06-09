@@ -11,7 +11,7 @@ if __name__ == "__main__" and __package__ is None:
     __package__ = "keras_pipeline"
 
 # Model
-from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFromTrain
+from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFromTrain, LoadRetinaNet
 
 # Dataset and generator
 from keras_pipeline.datasets import COCODataset
@@ -19,7 +19,7 @@ from keras_pipeline.generators import GeneratorConfig, DetectionGenerator
 
 # Evaluation callbacks
 from keras_pipeline.callbacks import RedirectModel
-from keras_pipeline.callbacks.eval import Evaluate
+from keras_pipeline.callbacks.eval import EvaluateDetection
 
 
 def makedirs(path):
@@ -34,9 +34,10 @@ def determine_initial_epoch(args):
     return 0
 
 
-def create_callback(training_model, prediction_model, validation_generator, args):
+def create_callback(training_model, prediction_model, validation_generator, backbone_name='', args):
     callbacks = []
 
+    # Create tensorboard
     tensorboard_callback = None
 
     if args.tensorboard_dir:
@@ -46,7 +47,7 @@ def create_callback(training_model, prediction_model, validation_generator, args
             histogram_freq         = 0,
             batch_size             = args.batch_size,
             write_graph            = True,
-            write_grads            = False,
+            write_grads            = True,
             write_images           = False,
             embeddings_freq        = 0,
             embeddings_layer_names = None,
@@ -56,24 +57,19 @@ def create_callback(training_model, prediction_model, validation_generator, args
 
     # Save model
     if args.snapshots:
-        # ensure directory created first; otherwise h5py will error after epoch.
         makedirs(args.snapshot_path)
         checkpoint = keras.callbacks.ModelCheckpoint(
             os.path.join(
                 args.snapshot_path,
-                'retinanet_vgg_coco_{epoch:02d}.h5'
+                'retinanet_{}_coco_{{epoch:02d}}.h5'.format(backbone_name)
             ),
             verbose=1,
-            save_weights_only=True
-            # save_best_only=True,
-            # monitor="mAP",
-            # mode='max'
+            save_weights_only=False,
         )
-        # checkpoint = RedirectModel(checkpoint, training_model)
         callbacks.append(checkpoint)
 
     if args.evaluation:
-        evaluation = Evaluate(validation_generator, tensorboard=tensorboard_callback)
+        evaluation = EvaluateDetection(validation_generator, tensorboard=tensorboard_callback)
         evaluation = RedirectModel(evaluation, prediction_model)
         callbacks.append(evaluation)
 
@@ -116,19 +112,15 @@ def make_generators(train_set, validation_set, backbone_name, compute_anchors, a
 
 
 def make_models(model_config, args):
-    # Make model based on config
-    training_model = RetinaNetTrain(model_config)
-
-    # Load weights if snapshot provided
     if args.snapshot:
-        training_model.load_weights(args.snapshot)
+        # Load model from a h5 file
+        training_model = LoadRetinaNet(args.snapshot, model_config.backbone_name)
+    else:
+        # Make model based on config
+        training_model = RetinaNetTrain(model_config)
 
+    # Build prediction model from training model
     prediction_model = RetinaNetFromTrain(training_model, model_config)
-
-    # Visualize model
-    if args.visualize_model:
-        from keras.utils import plot_model
-        plot_model(prediction_model, to_file='model.png')
 
     # Print model
     training_model.summary()
@@ -178,11 +170,6 @@ def check_args(args):
 def parse_args(args):
     parser = argparse.ArgumentParser(description='Demo training script for training a RetinaNet network.')
 
-    # Resume training / load weights
-    # TODO: Allow resumption of training and loading of weights
-    parser.add_argument('--snapshot',
-        help='Resume training from a snapshot file')
-
     # Most frequently used params
     parser.add_argument('--num-gpu',
         help='Number of gpus to train model with, you must train with atleast 1 GPU',
@@ -194,22 +181,23 @@ def parse_args(args):
         help='Path to dataset directory (ie. /tmp/COCO)',
         type=str)
 
-    # Logging params
+    # Resume training / load weights
+    parser.add_argument('--snapshot',
+        help='Resume training from a snapshot file')
     parser.add_argument('--snapshot-path',
         help='Path to store snapshots of model during training',
         default='./snapshot')
     parser.add_argument('--no-snapshots',
         help='Disable saving snapshots',
         dest='snapshots', action='store_false')
+
+    # Logging params
     parser.add_argument('--tensorboard-dir',
         help='Log directory for Tensorboard output',
         default='./logs')
-    parser.add_argument('--no-evaluation',
-        help='Disable per epoch evaluation',
-        dest='evaluation', action='store_false')
-    parser.add_argument('--visualize-model',
-        help='Flag to plot model out as a graph',
-        action='store_true')
+    parser.add_argument('--eval',
+        help='Perform evaluation per epoch',
+        dest='evaluation', action='store_true')
 
     # Additional parameters
     parser.add_argument('--freeze-backbone',
@@ -256,7 +244,13 @@ def main():
     print('Data Generators created')
 
     # Create callback
-    callbacks = create_callback(training_model, prediction_model, validation_generator, args)
+    callbacks = create_callback(
+        training_model,
+        prediction_model,
+        validation_generator,
+        backbone_name=model_config.backbone_name,
+        args=args
+    )
 
     # start_training
     print('\n==== Training Model ====')

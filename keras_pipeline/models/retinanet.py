@@ -4,7 +4,8 @@ import numpy as np
 
 import keras
 from .. import layers
-from .load_backbone import load_backbone
+from .. import losses
+from .load_backbone import load_backbone, load_backbone_custom_objects
 
 
 def default_classification_model(
@@ -50,7 +51,6 @@ def default_classification_model(
         filters=num_classes * num_anchors,
         kernel_initializer=keras.initializers.zeros(),
         bias_initializer=keras.initializers.Constant(value=-np.log((1 - prior_probability) / prior_probability)),
-        # bias_initializer=initializers.PriorProbability(probability=prior_probability),
         name='pyramid_classification',
         **options
     )(outputs)
@@ -204,14 +204,14 @@ def __build_pyramid_features(C3, C4, C5, feature_size=256):
 
 
 def RetinaNetTrain(config):
-    """ Build a retinanet model for training
+    """ Build a retinanet model with initial weights for training
 
     Args
         config : A RetinaNetConfig object, refer to
                  keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
     Returns
-        A retinanet model that returns classification and regression for your defined anchors
+        A retinanet model with initial weights that returns classification and regression for your defined anchors
 
     """
     # Get input_tensor
@@ -307,18 +307,50 @@ def RetinaNetFromTrain(model, config):
 
 
 def RetinaNet(config):
-    """ Build a retinanet model for inference
+    """ Build a retinanet model with initial weights for inference
 
     Args
         config : A RetinaNetConfig object, refer to
                  keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
     Returns
-        A retinanet model that returns detections
+        A retinanet model with initial weights that returns detections
 
     """
-    # This maybe seems unintuitive, but the prediction model is built on top a of a train model
+
     training_model = RetinaNetTrain(config)
     prediction_model = RetinaNetFromTrain(training_model, config)
 
     return prediction_model
+
+
+def LoadRetinaNet(file_path, backbone_name):
+    """ Load a retinanet model from a h5 file
+
+    Args
+        file_path : Path to your h5 file
+        config    : A RetinaNetConfig object, refer to
+                    keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
+
+    Returns
+        A retinanet model as defined in the h5 file
+
+    """
+    # Dictionary of custom layers used in the RetinaNet
+    custom_objects = {
+        'ResizeTo'                 : layers.ResizeTo,
+        'RegressBoxes'             : layers.RegressBoxes,
+        'FilterDetections'         : layers.FilterDetections,
+        'Anchors'                  : layers.Anchors,
+        'ClipBoxes'                : layers.ClipBoxes,
+        'detection_smooth_l1_loss' : losses.make_detection_smooth_l1_loss(),
+        'detection_focal_loss'     : losses.make_detection_focal_loss(),
+    }
+
+    # Get backbone custom objects
+    custom_objects.update(load_backbone_custom_objects(backbone_name))
+
+    # Load training model
+    model = keras.models.load_model(file_path, custom_objects=custom_objects)
+
+    return model

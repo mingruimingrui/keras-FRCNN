@@ -1,5 +1,5 @@
 import keras
-import keras_resnet
+import keras_resnet.models
 
 
 def ResNet18(input_tensor, include_top=True, freeze_backbone=False):

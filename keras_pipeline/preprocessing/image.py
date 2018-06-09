@@ -29,11 +29,11 @@ def preprocess_image_vgg(x):
 
 
 def preprocess_image(x, backbone):
-    if 'inception_v3' == backbone:
+    if 'inception' in backbone:
         return preprocess_image_inception(x)
-    elif 'resnet50' == backbone:
+    elif 'resnet' in backbone:
         return preprocess_image_resnet(x)
-    elif 'vgg16' == backbone:
+    elif 'vgg' in backbone:
         return preprocess_image_vgg(x)
     else:
         raise NotImplementedError("Your backbone {} has not been implemented".format(backbone))

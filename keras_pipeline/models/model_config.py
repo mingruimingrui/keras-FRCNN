@@ -78,9 +78,9 @@ class RetinaNetConfig(ConfigTemplate):
 
         self.add(
             'backbone_name',
-            'Loads a backbone based on a name',
-            default = 'vgg16',
-            valid_options = ['inception_v3', 'resnet50', 'vgg16']
+            'Loads a backbone based on a valid name',
+            default = 'resnet50',
+            valid_options = ['inception_v3', 'resnet18', 'resnet34', 'resnet50', 'vgg16']
         )
 
         self.add(
@@ -175,7 +175,7 @@ class RetinaNetConfig(ConfigTemplate):
     def compute_pyramid_feautre_shapes_for_img_shape(self, image_shape):
         C0_shape = np.array(image_shape[:2])
 
-        if self.backbone_name is 'inception_v3':
+        if 'inception' in self.backbone_name:
             C1_shape = np.ceil((C0_shape - 2) / 2) - 2
             C2_shape = np.ceil((C1_shape - 2) / 2) - 2
 
@@ -186,7 +186,7 @@ class RetinaNetConfig(ConfigTemplate):
             P6_shape = np.ceil(P5_shape / 2)
             P7_shape = np.ceil(P6_shape / 2)
 
-        elif self.backbone_name is 'resnet50':
+        elif 'resnet' in self.backbone_name:
             C1_shape = np.ceil(C0_shape / 2)
             C2_shape = np.floor(C1_shape / 2)
 
@@ -197,7 +197,7 @@ class RetinaNetConfig(ConfigTemplate):
             P6_shape = np.ceil(P5_shape / 2)
             P7_shape = np.ceil(P6_shape / 2)
 
-        elif self.backbone_name is 'vgg16':
+        elif 'vgg' in self.backbone_name:
             C1_shape = np.floor(C0_shape / 2)
             C2_shape = np.floor(C1_shape / 2)
 

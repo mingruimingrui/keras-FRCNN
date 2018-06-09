@@ -62,7 +62,7 @@ def ResNet34Backbone(input_tensor, freeze_backbone=False):
 
 def ResNet50(input_tensor, include_top=True, freeze_backbone=False):
     """ Loads a resnet 50 model """
-    resnet_model = keras_resnet.models.ResNet5-(input_tensor, include_top=include_top, freeze_bn=True)
+    resnet_model = keras_resnet.models.ResNet50(input_tensor, include_top=include_top, freeze_bn=True)
 
     if freeze_backbone:
         for layer in resnet_model.layers:

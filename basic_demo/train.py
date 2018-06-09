@@ -248,8 +248,8 @@ def main():
         training_model,
         prediction_model,
         validation_generator,
-        backbone_name = model_config.backbone_name,
-        args
+        backbone_name=model_config.backbone_name,
+        args=args
     )
 
     # start_training

@@ -8,18 +8,6 @@ from .. import losses
 from .load_backbone import load_backbone, load_backbone_custom_objects
 
 
-# Dictionary of custom layers used in the RetinaNet
-custom_objects = {
-    'UpsampleLike'     : layers.ResizeTo,
-    'RegressBoxes'     : layers.RegressBoxes,
-    'FilterDetections' : layers.FilterDetections,
-    'Anchors'          : layers.Anchors,
-    'ClipBoxes'        : layers.ClipBoxes,
-    '_smooth_l1'       : losses.make_detection_smooth_l1_loss(),
-    '_focal'           : losses.make_detection_focal_loss(),
-}
-
-
 def default_classification_model(
     num_classes,
     num_anchors,
@@ -336,24 +324,34 @@ def RetinaNet(config):
     return prediction_model
 
 
-def LoadRetinaNetTrain(path, config):
+def LoadRetinaNetTrain(file_path, config):
     """ Load a training model from a h5 file
 
     Args
-        path   : Path to your h5 file
-        config : A RetinaNetConfig object, refer to
-                 keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
+        file_path : Path to your h5 file
+        config    : A RetinaNetConfig object, refer to
+                    keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
     Returns
         A retinanet model that returns classification and regression for your defined anchors
 
     """
+    # Dictionary of custom layers used in the RetinaNet
+    custom_objects = {
+        'ResizeTo'                 : layers.ResizeTo,
+        'RegressBoxes'             : layers.RegressBoxes,
+        'FilterDetections'         : layers.FilterDetections,
+        'Anchors'                  : layers.Anchors,
+        'ClipBoxes'                : layers.ClipBoxes,
+        'detection_smooth_l1_loss' : losses.make_detection_smooth_l1_loss(),
+        'detection_focal_loss'     : losses.make_detection_focal_loss(),
+    }
 
-    # Get all custom objects
-    updated_custom_objects = load_backbone_custom_objects(config.backbone_name).update(custom_objects)
+    # Get backbone custom objects
+    custom_objects.update(load_backbone_custom_objects(config.backbone_name))
 
     # Load training model
-    training_model = keras.models.load_model(file_path, custom_objects=updated_custom_objects)
+    training_model = keras.models.load_model(file_path, custom_objects=custom_objects)
 
     return training_model
 

@@ -1,8 +1,8 @@
 import keras
-from ..utils.eval import evaluate
+from ..utils.eval import evaluate_detection
 
 
-class Evaluate(keras.callbacks.Callback):
+class EvaluateDetection(keras.callbacks.Callback):
     def __init__(self, generator, iou_threshold=0.5, score_threshold=0.05, max_detections=100, save_path=None, tensorboard=None, verbose=1):
         """ Evaluate a given dataset using a given model at the end of every epoch during training.
 
@@ -29,7 +29,7 @@ class Evaluate(keras.callbacks.Callback):
         logs = logs or {}
 
         # run evaluation
-        average_precisions = evaluate(
+        average_precisions = evaluate_detection(
             self.generator,
             self.model,
             iou_threshold=self.iou_threshold,

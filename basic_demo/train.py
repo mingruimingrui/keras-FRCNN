@@ -11,7 +11,7 @@ if __name__ == "__main__" and __package__ is None:
     __package__ = "keras_pipeline"
 
 # Model
-from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFromTrain, RetinaNetLoad
+from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFromTrain, LoadRetinaNet
 
 # Dataset and generator
 from keras_pipeline.datasets import COCODataset
@@ -114,7 +114,7 @@ def make_generators(train_set, validation_set, backbone_name, compute_anchors, a
 def make_models(model_config, args):
     if args.snapshot:
         # Load model from a h5 file
-        training_model = LoadRetinaNetTrain(args.snapshot, model_config)
+        training_model = LoadRetinaNet(args.snapshot, model_config.backbone_name)
     else:
         # Make model based on config
         training_model = RetinaNetTrain(model_config)

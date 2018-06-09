@@ -10,7 +10,7 @@ from .load_backbone import load_backbone
 
 # Detection
 from .retinanet import RetinaNet, RetinaNetTrain, RetinaNetFromTrain
-from .retinanet import LoadRetinaNet, LoadRetinaNetTrain
+from .retinanet import LoadRetinaNet
 from .model_config import RetinaNetConfig
 
 # Feature Extraction

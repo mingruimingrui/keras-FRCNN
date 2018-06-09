@@ -324,8 +324,8 @@ def RetinaNet(config):
     return prediction_model
 
 
-def LoadRetinaNetTrain(file_path, config):
-    """ Load a training model from a h5 file
+def LoadRetinaNet(file_path, backbone_name):
+    """ Load a retinanet model from a h5 file
 
     Args
         file_path : Path to your h5 file
@@ -333,7 +333,7 @@ def LoadRetinaNetTrain(file_path, config):
                     keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
 
     Returns
-        A retinanet model that returns classification and regression for your defined anchors
+        A retinanet model as defined in the h5 file
 
     """
     # Dictionary of custom layers used in the RetinaNet
@@ -348,28 +348,9 @@ def LoadRetinaNetTrain(file_path, config):
     }
 
     # Get backbone custom objects
-    custom_objects.update(load_backbone_custom_objects(config.backbone_name))
+    custom_objects.update(load_backbone_custom_objects(backbone_name))
 
     # Load training model
-    training_model = keras.models.load_model(file_path, custom_objects=custom_objects)
+    model = keras.models.load_model(file_path, custom_objects=custom_objects)
 
-    return training_model
-
-
-def LoadRetinaNet(path, config):
-    """ Load a prediction model from a h5 file
-
-    Args
-        path   : Path to your h5 file
-        config : A RetinaNetConfig object, refer to
-                 keras_pipeline.models.RetinaNetConfig(num_classes=1).help()
-
-    Returns
-        A retinanet model that returns detections
-
-    """
-
-    training_model = LoadRetinaNetTrain(path, config)
-    prediction_model = RetinaNetFromTrain(training_model, config)
-
-    return prediction_model
+    return model

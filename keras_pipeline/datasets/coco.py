@@ -21,8 +21,20 @@ class COCODataset(ImageDatasetTemplate):
     """
 
     def __init__(self, root_dir, ann_file_name):
-        self.root_dir = root_dir
-        self.set_name = ann_file_name
+        self.root_dir      = root_dir
+        self.ann_file_name = ann_file_name
+
+        # Figure out set_name
+        if 'train2017' in self.ann_file_name:
+            self.set_name = 'train2017'
+        elif 'val2017' in self.ann_file_name:
+            self.set_name = 'val2017'
+        elif 'test2017' in self.ann_file_name:
+            self.set_name = 'test2017'
+        elif 'test-dev2017' in self.ann_file_name:
+            self.set_name = 'test2017'
+        else:
+            raise Exception('annotation_file does not seemt to belong to train2017, val2017 or test2017')
 
         # Load annotation file using pycocotools.coco.COCO
         # Too bad there is no quiet mode for this

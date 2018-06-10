@@ -34,7 +34,7 @@ def determine_initial_epoch(args):
     return 0
 
 
-def create_callback(training_model, prediction_model, validation_generator, backbone_name='', args):
+def create_callback(training_model, prediction_model, validation_generator, backbone_name, args):
     callbacks = []
 
     # Create tensorboard

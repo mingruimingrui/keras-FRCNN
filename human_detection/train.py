@@ -210,7 +210,7 @@ def get_args(args):
     return check_args(parse_args(args))
 
 
-def main(args=None):
+def main():
     # Set up script options
     args = get_args(sys.argv[1:])
     setup()

@@ -160,7 +160,6 @@ def setup():
 
 
 def check_args(args):
-    assert args.coco_path is not None, 'Must have the COCO dataset'
     assert args.num_gpu >= 1, 'Must train with atleast 1 GPU'
     assert args.batch_size >= args.num_gpu, 'Batch size must be equal or greater than number of GPUs used'
 
@@ -171,15 +170,15 @@ def parse_args(args):
     parser = argparse.ArgumentParser(description='Demo training script for training a RetinaNet network.')
 
     # Most frequently used params
+    parser.add_argument('--coco-path',
+        help='Path to dataset directory (ie. /tmp/COCO)',
+        type=str, required=True)
     parser.add_argument('--num-gpu',
         help='Number of gpus to train model with, you must train with atleast 1 GPU',
         default=1, type=int)
     parser.add_argument('--batch-size',
         help='Size of the batches',
         default=1, type=int)
-    parser.add_argument('--coco-path',
-        help='Path to dataset directory (ie. /tmp/COCO)',
-        type=str)
 
     # Resume training / load weights
     parser.add_argument('--snapshot',
@@ -188,7 +187,7 @@ def parse_args(args):
         help='Path to store snapshots of model during training',
         default='./snapshot')
     parser.add_argument('--no-snapshots',
-        help='Disable saving snapshots',
+        help='Disable saving snapshots overrides snapshot path',
         dest='snapshots', action='store_false')
 
     # Logging params

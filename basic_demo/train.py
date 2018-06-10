@@ -14,7 +14,7 @@ if __name__ == "__main__" and __package__ is None:
 from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFromTrain, LoadRetinaNet
 
 # Dataset and generator
-from keras_pipeline.datasets import COCODataset
+from keras_pipeline.datasets import CocoDataset
 from keras_pipeline.generators import GeneratorConfig, DetectionGenerator
 
 # Evaluation callbacks
@@ -130,8 +130,8 @@ def make_models(model_config, args):
 
 def load_datasets(args):
     # Load dataset information
-    train_set   = COCODataset(args.coco_path, 'instances_train2017.json')
-    validation_set = COCODataset(args.coco_path, 'instances_val2017.json')
+    train_set   = CocoDataset(args.coco_path, 'instances_train2017.json')
+    validation_set = CocoDataset(args.coco_path, 'instances_val2017.json')
 
     return train_set, validation_set
 

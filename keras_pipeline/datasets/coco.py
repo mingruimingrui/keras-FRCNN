@@ -6,7 +6,7 @@ from pycocotools.coco import COCO
 from ._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image import read_image
 
-class COCODataset(ImageDatasetTemplate):
+class CocoDataset(ImageDatasetTemplate):
     """ COCO dataset API meant to be used by generators.DetectionGenerator
     Requires your coco dataset to be setup in the following format
 

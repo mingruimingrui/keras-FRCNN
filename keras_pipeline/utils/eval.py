@@ -125,7 +125,7 @@ def _get_annotations(generator):
     return all_annotations
 
 
-def evaluate(
+def evaluate_detection(
     generator,
     model,
     iou_threshold=0.5,

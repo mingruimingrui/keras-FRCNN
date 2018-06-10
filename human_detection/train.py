@@ -130,8 +130,8 @@ def make_models(model_config, args):
 
 def load_datasets(args):
     # Load dataset information
-    train_set   = COCODataset(args.coco_path, 'instances_train2017.json')
-    validation_set = COCODataset(args.coco_path, 'instances_val2017.json')
+    train_set   = COCODataset(args.coco_path, 'person_instances_train2017.json')
+    validation_set = COCODataset(args.coco_path, 'person_instances_val2017.json')
 
     return train_set, validation_set
 
@@ -167,7 +167,7 @@ def check_args(args):
 
 
 def parse_args(args):
-    parser = argparse.ArgumentParser(description='Demo training script for training a RetinaNet network.')
+    parser = argparse.ArgumentParser(description='Demo training script for training a RetinaNet network for person detection')
 
     # Most frequently used params
     parser.add_argument('--coco-path',

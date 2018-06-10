@@ -110,7 +110,7 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def main(argv=None):
+def main():
     # Set up script options
     args = parse_args(sys.argv[1:])
 

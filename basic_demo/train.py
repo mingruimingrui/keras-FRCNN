@@ -130,8 +130,8 @@ def make_models(model_config, args):
 
 def load_datasets(args):
     # Load dataset information
-    train_set   = COCODataset(args.coco_path, 'train2017')
-    validation_set = COCODataset(args.coco_path, 'val2017')
+    train_set   = COCODataset(args.coco_path, 'instances_train2017.json')
+    validation_set = COCODataset(args.coco_path, 'instances_val2017.json')
 
     return train_set, validation_set
 

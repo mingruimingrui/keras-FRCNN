@@ -1,10 +1,10 @@
 from __future__ import division
+
+import os
+import struct
 import keras
 import numpy as np
-import cv2
 from PIL import Image
-
-from .transform import change_transform_origin
 
 
 def read_image(path):
@@ -37,130 +37,66 @@ def preprocess_image(x, backbone):
         raise NotImplementedError("Your backbone {} has not been implemented".format(backbone))
 
 
-def adjust_transform_for_image(transform, image, relative_translation):
-    """ Adjust a transformation for a specific image.
+class UnknownImageFormat(Exception):
+    pass
 
-    The translation of the matrix will be scaled with the size of the image.
-    The linear part of the transformation will adjusted so that the origin of the transformation will be at the center of the image.
+
+def get_image_size(file_path):
+    """ Copied from https://github.com/scardine/image_size
+    Return (width, height) for a given img file content - no external
+    dependencies except the os and struct modules from core
     """
-    height, width, channels = image.shape
+    size = os.path.getsize(file_path)
 
-    result = transform
+    with open(file_path) as input:
+        height = -1
+        width = -1
+        data = input.read(25)
 
-    # Scale the translation with the image size if specified.
-    if relative_translation:
-        result[0:2, 2] *= [width, height]
-
-    # Move the origin of transformation.
-    result = change_transform_origin(transform, (0.5 * width, 0.5 * height))
-
-    return result
-
-
-class TransformParameters:
-    """ Struct holding parameters determining how to apply a transformation to an image.
-
-    # Arguments
-        fill_mode:             One of: 'constant', 'nearest', 'reflect', 'wrap'
-        interpolation:         One of: 'nearest', 'linear', 'cubic', 'area', 'lanczos4'
-        cval:                  Fill value to use with fill_mode='constant'
-        data_format:           Same as for keras.preprocessing.image.apply_transform
-        relative_translation:  If true (the default), interpret translation as a factor of the image size.
-                               If false, interpret it as absolute pixels.
-    """
-    def __init__(
-        self,
-        fill_mode            = 'nearest',
-        interpolation        = 'linear',
-        cval                 = 0,
-        data_format          = None,
-        relative_translation = True,
-    ):
-        self.fill_mode            = fill_mode
-        self.cval                 = cval
-        self.interpolation        = interpolation
-        self.relative_translation = relative_translation
-
-        if data_format is None:
-            data_format = keras.backend.image_data_format()
-        self.data_format = data_format
-
-        if data_format == 'channels_first':
-            self.channel_axis = 0
-        elif data_format == 'channels_last':
-            self.channel_axis = 2
+        if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):
+            # GIFs
+            w, h = struct.unpack("<HH", data[6:10])
+            width = int(w)
+            height = int(h)
+        elif ((size >= 24) and data.startswith('\211PNG\r\n\032\n')
+              and (data[12:16] == 'IHDR')):
+            # PNGs
+            w, h = struct.unpack(">LL", data[16:24])
+            width = int(w)
+            height = int(h)
+        elif (size >= 16) and data.startswith('\211PNG\r\n\032\n'):
+            # older PNGs?
+            w, h = struct.unpack(">LL", data[8:16])
+            width = int(w)
+            height = int(h)
+        elif (size >= 2) and data.startswith('\377\330'):
+            # JPEG
+            msg = " raised while trying to decode as JPEG."
+            input.seek(0)
+            input.read(2)
+            b = input.read(1)
+            try:
+                while (b and ord(b) != 0xDA):
+                    while (ord(b) != 0xFF): b = input.read(1)
+                    while (ord(b) == 0xFF): b = input.read(1)
+                    if (ord(b) >= 0xC0 and ord(b) <= 0xC3):
+                        input.read(3)
+                        h, w = struct.unpack(">HH", input.read(4))
+                        break
+                    else:
+                        input.read(int(struct.unpack(">H", input.read(2))[0])-2)
+                    b = input.read(1)
+                width = int(w)
+                height = int(h)
+            except struct.error:
+                raise UnknownImageFormat("StructError" + msg)
+            except ValueError:
+                raise UnknownImageFormat("ValueError" + msg)
+            except Exception as e:
+                raise UnknownImageFormat(e.__class__.__name__ + msg)
         else:
-            raise ValueError("invalid data_format, expected 'channels_first' or 'channels_last', got '{}'".format(data_format))
+            raise UnknownImageFormat(
+                "Sorry, don't know how to get information from this file."
+            )
 
-    def cvBorderMode(self):
-        if self.fill_mode == 'constant':
-            return cv2.BORDER_CONSTANT
-        if self.fill_mode == 'nearest':
-            return cv2.BORDER_REPLICATE
-        if self.fill_mode == 'reflect':
-            return cv2.BORDER_REFLECT_101
-        if self.fill_mode == 'wrap':
-            return cv2.BORDER_WRAP
-
-    def cvInterpolation(self):
-        if self.interpolation == 'nearest':
-            return cv2.INTER_NEAREST
-        if self.interpolation == 'linear':
-            return cv2.INTER_LINEAR
-        if self.interpolation == 'cubic':
-            return cv2.INTER_CUBIC
-        if self.interpolation == 'area':
-            return cv2.INTER_AREA
-        if self.interpolation == 'lanczos4':
-            return cv2.INTER_LANCZOS4
-
-
-def apply_transform(matrix, image, params):
-    """
-    Apply a transformation to an image.
-
-    The origin of transformation is at the top left corner of the image.
-
-    The matrix is interpreted such that a point (x, y) on the original image is moved to transform * (x, y) in the generated image.
-    Mathematically speaking, that means that the matrix is a transformation from the transformed image space to the original image space.
-
-    Parameters:
-      matrix: A homogeneous 3 by 3 matrix holding representing the transformation to apply.
-      image:  The image to transform.
-      params: The transform parameters (see TransformParameters)
-    """
-    if params.channel_axis != 2:
-        image = np.moveaxis(image, params.channel_axis, 2)
-
-    output = cv2.warpAffine(
-        image,
-        matrix[:2, :],
-        dsize       = (image.shape[1], image.shape[0]),
-        flags       = params.cvInterpolation(),
-        borderMode  = params.cvBorderMode(),
-        borderValue = params.cval,
-    )
-
-    if params.channel_axis != 2:
-        output = np.moveaxis(output, 2, params.channel_axis)
-    return output
-
-
-def resize_image(img, min_side=800, max_side=1333):
-    (rows, cols, _) = img.shape
-
-    smallest_side = min(rows, cols)
-
-    # rescale the image so the smallest side is min_side
-    scale = min_side / smallest_side
-
-    # check if the largest side is now greater than max_side, which can happen
-    # when images have a large aspect ratio
-    largest_side = max(rows, cols)
-    if largest_side * scale > max_side:
-        scale = max_side / largest_side
-
-    # resize the image with the computed scale
-    img = cv2.resize(img, None, fx=scale, fy=scale)
-
-    return img, scale
+    return width, height

@@ -11,8 +11,8 @@ import warnings
 import keras
 
 from ..utils.anchors import anchor_targets_bbox, bbox_transform
-from ..preprocessing.image import (
-    preprocess_image,
+from ..preprocessing.image import preprocess_image
+from ..preprocessing.image_transform import (
     adjust_transform_for_image,
     apply_transform,
     resize_image

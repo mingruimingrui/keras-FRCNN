@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 from ..utils._config_template import ConfigTemplate
 from ..datasets._ImageDatasetTemplate import ImageDatasetTemplate
-from ..preprocessing.image import TransformParameters
+from ..preprocessing.image_transform import TransformParameters
 
 
 class GeneratorConfig(ConfigTemplate):

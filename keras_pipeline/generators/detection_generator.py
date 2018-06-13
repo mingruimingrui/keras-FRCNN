@@ -302,3 +302,53 @@ class DetectionGenerator(object):
             group_index += 1
             group = self.groups[group_index]
             yield self._get_batches_of_transformed_samples(group)
+
+    ###########################################################################
+    #### This marks the start of all evaluation only methods
+
+    def create_eval_generator(self):
+        """ Creates an evaluation set generator
+
+        Generator would return original images and annotations along with network inputs and targets.
+        All images and annotations are scaled down to previously defined size ranges.
+
+        Generator generates items in the following format
+        [network_inputs, orig_image], [classification_targets, regression_targets, orig_annotations, image_scale]
+        """
+
+        img_ids = self.data.list_image_index()
+        num_img = len(img_ids)
+        i = 0
+
+        while i < num_img:
+            img_id = img_ids[i]
+
+            # load images and annotations
+            image_group       = self.load_image_group([img_id])
+            annotations_group = self.load_annotations_group([img_id])
+
+            # Check validity of annotations
+            image_group, annotations_group = self.filter_annotations(image_group, annotations_group)
+
+            # Get original image and annotations
+            orig_image = image_group[0]
+            orig_annotations = annotations_group[0]
+
+            # Perform resizing
+            orig_image, image_scale = self.resize_image(orig_image)
+            orig_annotations[:, :4] *= image_scale
+
+            # Perform image preprocessing
+            image_group = [self.preprocess_image(orig_image)]
+            annotations_group = [orig_annotations]
+
+            # Compuate network inputs
+            inputs = self.compute_inputs(image_group)
+
+            # Compute network targets
+            targets = self.compute_targets(image_group, annotations_group)
+
+            # Increase counter
+            i += 1
+
+            yield [inputs, orig_image], targets + [orig_annotations, image_scale]

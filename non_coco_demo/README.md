@@ -3,15 +3,14 @@
 This experiment is to showcase how one can leverage off pycocotools to fit a
 dataset to fit the input requirements as specified in CocoDataset
 (from keras_pipeline/datasets/coco.py). Here we specifically will demonstrate
-with the kitti dataset,
+with the [KITTI dataset](http://www.cvlibs.net/datasets/kitti/).
 
 
 ## Table of content / steps to take
 
 1. [Create annotation file and symlinks](#create-annotation-file-and-symlinks)
 2. [Split training images](#split-training-images)
-3. [Write training script](#write-training-script)
-4. [Train and evaluate](#train-and-evaluate)
+3. [Train and evaluate](#train-and-evaluate)
 
 
 ## Create annotation file and symlinks
@@ -113,6 +112,15 @@ our evaluation, the default in the file is to exclude validation data from
 the training set.
 
 
-## Write training script
+## Train and evaluate
 
-TBI
+You can now write a training file and run your training task on your new dataset.
+Here I'm borrowing ```train.py``` directly from ```basic_demo```. Simply I'm editting
+out a few changes to reference to ```kitti_path``` instead of ```coco_path```.
+(Also using the ```kitti set_names```). To run the training file, just use
+
+```
+python 3_train.py --kitti-path <PATH TO YOUR KITT DATASET>
+```
+
+Evaluation is still TBI.

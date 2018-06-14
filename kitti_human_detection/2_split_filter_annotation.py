@@ -9,7 +9,13 @@ import argparse
 from tqdm import tqdm
 
 
+PERSON_CAT_ID   = 3
+
+
 def save_dataset(kitti_path, dataset, file_name):
+    print('{} will have {} images and {} annotations'.format(
+        file_name, len(dataset['images']), len(dataset['annotations'])
+    ))
     with open(os.path.join(kitti_path, 'annotations', file_name), 'w') as f:
         json.dump(dataset, f)
 
@@ -73,15 +79,15 @@ def filter_annotations(annotation_data, args):
     """
     filtered_annotations = []
     filtered_images      = []
-    img_id_keep        = []
+    img_id_keep          = []
 
     # Filter annotations
     for ann in annotation_data['annotations']:
-        if (ann['truncated'] <= args.truncated_threshold) and (ann['occluded'] <= args.occluded_threshold):
+        if  (ann['truncated'] <= args.truncated_threshold) and \
+            (ann['occluded'] <= args.occluded_threshold) and \
+            (ann['category_id'] == PERSON_CAT_ID):
             filtered_annotations.append(ann)
             img_id_keep.append(ann['image_id'])
-        else:
-            print('wtf')
 
     # Transform img_id_keep into dict for O(1) lookup
     img_id_keep = {k: None for k in img_id_keep}
@@ -90,10 +96,9 @@ def filter_annotations(annotation_data, args):
     for img in annotation_data['images']:
         if img['id'] in img_id_keep:
             filtered_images.append(img)
-        else:
-            print('WTF')
 
     # Update annotation_data with the filtered annotations and images
+    annotation_data['categories']  = [annotation_data['categories'][PERSON_CAT_ID]]
     annotation_data['annotations'] = filtered_annotations
     annotation_data['images']      = filtered_images
 
@@ -150,8 +155,8 @@ def main():
     training_set, validation_set = split_train_val(full_annotation_data, args)
 
     # Save train and val set
-    save_dataset(args.kitti_path, training_set  , 'instances_local_train.json')
-    save_dataset(args.kitti_path, validation_set, 'instances_local_val.json')
+    save_dataset(args.kitti_path, training_set  , 'person_instances_local_train.json')
+    save_dataset(args.kitti_path, validation_set, 'person_instances_local_val.json')
 
     print('Dataset filtered, split and saved')
 

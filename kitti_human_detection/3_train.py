@@ -130,8 +130,8 @@ def make_models(model_config, args):
 
 def load_datasets(args):
     # Load dataset information
-    train_set      = CocoDataset(args.kitti_path, 'instances_local_train.json', 'training')
-    validation_set = CocoDataset(args.kitti_path, 'instances_local_val.json'  , 'training')
+    train_set      = CocoDataset(args.kitti_path, 'person_instances_local_train.json', 'training')
+    validation_set = CocoDataset(args.kitti_path, 'person_instances_local_val.json'  , 'training')
 
     return train_set, validation_set
 
@@ -256,8 +256,8 @@ def main():
     initial_epoch = determine_initial_epoch(args)
     training_model.fit_generator(
         generator=train_generator,
-        steps_per_epoch=10000,
-        epochs=50,
+        steps_per_epoch=5000 // args.batch_size,
+        epochs=60,
         verbose=1,
         callbacks=callbacks,
         initial_epoch=initial_epoch,

@@ -250,7 +250,6 @@ def main():
         backbone_name=model_config.backbone_name,
         args=args
     )
-    sys.exit('DEBUG')
 
     # start_training
     print('\n==== Training Model ====')

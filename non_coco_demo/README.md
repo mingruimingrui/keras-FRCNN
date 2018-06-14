@@ -5,11 +5,14 @@ dataset to fit the input requirements as specified in CocoDataset
 (from keras_pipeline/datasets/coco.py). Here we specifically will demonstrate
 with the kitti dataset,
 
+
 ## Table of content / steps to take
 
-1. Create annotation file and symlinks
-2. Write training script
-3. Train / Evaluate
+1. [Create annotation file and symlinks](#create-annotation-file-and-symlinks)
+2. [Split training images](#split-training-images)
+3. [Write training script](#write-training-script)
+4. [Train and evaluate](#train-and-evaluate)
+
 
 ## Create annotation file and symlinks
 
@@ -77,9 +80,39 @@ create an annotation file from the kitti annotations to fit to the coco
 annotation style. Next to replicate the required directories in the coco dataset,
 one can utilize symlinks.
 
-The script ```preprocess_dataset.py``` performs such a transformation. To run it,
-use the following command at the directory ```non_coco_demo```(the directory of this README).
+The script ```preprocess_dataset.py``` performs such a transformation.
+To run it, use the following command at the directory ```non_coco_demo```.
+(the directory of this README)
+
+Inside is a script that parses the kitti annotations into a coco accepted
+format and stores the data into an annotation file under
+<ROOT_KITTI_DIR>/annotations. The file would also create an images directory
+and create symlinks to the related image sets.
 
 ```
-python preprocess_dataset.py  # admin rights are required on windows OS to create symlinks
+# admin rights are required on windows OS to create symlinks
+python 1_preprocess_dataset.py --kitti-path <PATH TO YOUR KITTI DATASET>
 ```
+
+
+## Split training images
+
+The ```testing``` kitti dataset does not contain any labels so we have to
+split their training set into a local training and validation set. A
+script is written for you to run. Simply use
+
+```
+python 2_split_filter_annotaion.py --kitti-path <PATH TO YOUR KITT DATASET>
+```
+
+Detection models don't tend to overfit too much so it is often fine to
+sample from the training set for evaluation purposes.
+
+However since many of us were taught to always use unexplored data to do
+our evaluation, the default in the file is to exclude validation data from
+the training set.
+
+
+## Write training script
+
+TBI

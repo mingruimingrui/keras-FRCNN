@@ -1,10 +1,12 @@
 from __future__ import division
+
+import os
+import struct
+import collections
+
 import keras
 import numpy as np
-import cv2
 from PIL import Image
-
-from .transform import change_transform_origin
 
 
 def read_image(path):
@@ -37,130 +39,175 @@ def preprocess_image(x, backbone):
         raise NotImplementedError("Your backbone {} has not been implemented".format(backbone))
 
 
-def adjust_transform_for_image(transform, image, relative_translation):
-    """ Adjust a transformation for a specific image.
+""" Following section is taken directly from
+https://github.com/scardine/image_size/blob/master/get_image_size.py """
 
-    The translation of the matrix will be scaled with the size of the image.
-    The linear part of the transformation will adjusted so that the origin of the transformation will be at the center of the image.
+
+class UnknownImageFormat(Exception):
+    pass
+
+
+def get_image_size(file_path):
     """
-    height, width, channels = image.shape
-
-    result = transform
-
-    # Scale the translation with the image size if specified.
-    if relative_translation:
-        result[0:2, 2] *= [width, height]
-
-    # Move the origin of transformation.
-    result = change_transform_origin(transform, (0.5 * width, 0.5 * height))
-
-    return result
-
-
-class TransformParameters:
-    """ Struct holding parameters determining how to apply a transformation to an image.
-
-    # Arguments
-        fill_mode:             One of: 'constant', 'nearest', 'reflect', 'wrap'
-        interpolation:         One of: 'nearest', 'linear', 'cubic', 'area', 'lanczos4'
-        cval:                  Fill value to use with fill_mode='constant'
-        data_format:           Same as for keras.preprocessing.image.apply_transform
-        relative_translation:  If true (the default), interpret translation as a factor of the image size.
-                               If false, interpret it as absolute pixels.
+    Return an `Image` object for a given img file content - no external
+    dependencies except the os and struct builtin modules
+    Args:
+        file_path (str): path to an image file
+    Returns:
+        Image: (path, type, file_size, width, height)
     """
-    def __init__(
-        self,
-        fill_mode            = 'nearest',
-        interpolation        = 'linear',
-        cval                 = 0,
-        data_format          = None,
-        relative_translation = True,
-    ):
-        self.fill_mode            = fill_mode
-        self.cval                 = cval
-        self.interpolation        = interpolation
-        self.relative_translation = relative_translation
+    size = os.path.getsize(file_path)
 
-        if data_format is None:
-            data_format = keras.backend.image_data_format()
-        self.data_format = data_format
+    # be explicit with open arguments - we need binary mode
+    with open(file_path, "rb") as input:
+        height = -1
+        width = -1
+        data = input.read(26)
+        msg = " raised while trying to decode as JPEG."
 
-        if data_format == 'channels_first':
-            self.channel_axis = 0
-        elif data_format == 'channels_last':
-            self.channel_axis = 2
+        if (size >= 10) and data[:6] in (b'GIF87a', b'GIF89a'):
+            # GIFs
+            imgtype = 'GIF'
+            w, h = struct.unpack("<HH", data[6:10])
+            width = int(w)
+            height = int(h)
+        elif ((size >= 24) and data.startswith(b'\211PNG\r\n\032\n')
+              and (data[12:16] == b'IHDR')):
+            # PNGs
+            imgtype = 'PNG'
+            w, h = struct.unpack(">LL", data[16:24])
+            width = int(w)
+            height = int(h)
+        elif (size >= 16) and data.startswith(b'\211PNG\r\n\032\n'):
+            # older PNGs
+            imgtype = 'PNG'
+            w, h = struct.unpack(">LL", data[8:16])
+            width = int(w)
+            height = int(h)
+        elif (size >= 2) and data.startswith(b'\377\330'):
+            # JPEG
+            imgtype = 'JPEG'
+            input.seek(0)
+            input.read(2)
+            b = input.read(1)
+            try:
+                while (b and ord(b) != 0xDA):
+                    while (ord(b) != 0xFF):
+                        b = input.read(1)
+                    while (ord(b) == 0xFF):
+                        b = input.read(1)
+                    if (ord(b) >= 0xC0 and ord(b) <= 0xC3):
+                        input.read(3)
+                        h, w = struct.unpack(">HH", input.read(4))
+                        break
+                    else:
+                        input.read(
+                            int(struct.unpack(">H", input.read(2))[0]) - 2)
+                    b = input.read(1)
+                width = int(w)
+                height = int(h)
+            except struct.error:
+                raise UnknownImageFormat("StructError" + msg)
+            except ValueError:
+                raise UnknownImageFormat("ValueError" + msg)
+            except Exception as e:
+                raise UnknownImageFormat(e.__class__.__name__ + msg)
+        elif (size >= 26) and data.startswith(b'BM'):
+            # BMP
+            imgtype = 'BMP'
+            headersize = struct.unpack("<I", data[14:18])[0]
+            if headersize == 12:
+                w, h = struct.unpack("<HH", data[18:22])
+                width = int(w)
+                height = int(h)
+            elif headersize >= 40:
+                w, h = struct.unpack("<ii", data[18:26])
+                width = int(w)
+                # as h is negative when stored upside down
+                height = abs(int(h))
+            else:
+                raise UnknownImageFormat(
+                    "Unkown DIB header size:" +
+                    str(headersize))
+        elif (size >= 8) and data[:4] in (b"II\052\000", b"MM\000\052"):
+            # Standard TIFF, big- or little-endian
+            # BigTIFF and other different but TIFF-like formats are not
+            # supported currently
+            imgtype = 'TIFF'
+            byteOrder = data[:2]
+            boChar = ">" if byteOrder == "MM" else "<"
+            # maps TIFF type id to size (in bytes)
+            # and python format char for struct
+            tiffTypes = {
+                1: (1, boChar + "B"),  # BYTE
+                2: (1, boChar + "c"),  # ASCII
+                3: (2, boChar + "H"),  # SHORT
+                4: (4, boChar + "L"),  # LONG
+                5: (8, boChar + "LL"),  # RATIONAL
+                6: (1, boChar + "b"),  # SBYTE
+                7: (1, boChar + "c"),  # UNDEFINED
+                8: (2, boChar + "h"),  # SSHORT
+                9: (4, boChar + "l"),  # SLONG
+                10: (8, boChar + "ll"),  # SRATIONAL
+                11: (4, boChar + "f"),  # FLOAT
+                12: (8, boChar + "d")   # DOUBLE
+            }
+            ifdOffset = struct.unpack(boChar + "L", data[4:8])[0]
+            try:
+                countSize = 2
+                input.seek(ifdOffset)
+                ec = input.read(countSize)
+                ifdEntryCount = struct.unpack(boChar + "H", ec)[0]
+                # 2 bytes: TagId + 2 bytes: type + 4 bytes: count of values + 4
+                # bytes: value offset
+                ifdEntrySize = 12
+                for i in range(ifdEntryCount):
+                    entryOffset = ifdOffset + countSize + i * ifdEntrySize
+                    input.seek(entryOffset)
+                    tag = input.read(2)
+                    tag = struct.unpack(boChar + "H", tag)[0]
+                    if(tag == 256 or tag == 257):
+                        # if type indicates that value fits into 4 bytes, value
+                        # offset is not an offset but value itself
+                        type = input.read(2)
+                        type = struct.unpack(boChar + "H", type)[0]
+                        if type not in tiffTypes:
+                            raise UnknownImageFormat(
+                                "Unkown TIFF field type:" +
+                                str(type))
+                        typeSize = tiffTypes[type][0]
+                        typeChar = tiffTypes[type][1]
+                        input.seek(entryOffset + 8)
+                        value = input.read(typeSize)
+                        value = int(struct.unpack(typeChar, value)[0])
+                        if tag == 256:
+                            width = value
+                        else:
+                            height = value
+                    if width > -1 and height > -1:
+                        break
+            except Exception as e:
+                raise UnknownImageFormat(str(e))
+        elif size >= 2:
+                # see http://en.wikipedia.org/wiki/ICO_(file_format)
+            imgtype = 'ICO'
+            input.seek(0)
+            reserved = input.read(2)
+            if 0 != struct.unpack("<H", reserved)[0]:
+                raise UnknownImageFormat("Sorry, don't know how to get size for this file.")
+            format = input.read(2)
+            assert 1 == struct.unpack("<H", format)[0]
+            num = input.read(2)
+            num = struct.unpack("<H", num)[0]
+            if num > 1:
+                import warnings
+                warnings.warn("ICO File contains more than one image")
+            # http://msdn.microsoft.com/en-us/library/ms997538.aspx
+            w = input.read(1)
+            h = input.read(1)
+            width = ord(w)
+            height = ord(h)
         else:
-            raise ValueError("invalid data_format, expected 'channels_first' or 'channels_last', got '{}'".format(data_format))
+            raise UnknownImageFormat("Sorry, don't know how to get size for this file.")
 
-    def cvBorderMode(self):
-        if self.fill_mode == 'constant':
-            return cv2.BORDER_CONSTANT
-        if self.fill_mode == 'nearest':
-            return cv2.BORDER_REPLICATE
-        if self.fill_mode == 'reflect':
-            return cv2.BORDER_REFLECT_101
-        if self.fill_mode == 'wrap':
-            return cv2.BORDER_WRAP
-
-    def cvInterpolation(self):
-        if self.interpolation == 'nearest':
-            return cv2.INTER_NEAREST
-        if self.interpolation == 'linear':
-            return cv2.INTER_LINEAR
-        if self.interpolation == 'cubic':
-            return cv2.INTER_CUBIC
-        if self.interpolation == 'area':
-            return cv2.INTER_AREA
-        if self.interpolation == 'lanczos4':
-            return cv2.INTER_LANCZOS4
-
-
-def apply_transform(matrix, image, params):
-    """
-    Apply a transformation to an image.
-
-    The origin of transformation is at the top left corner of the image.
-
-    The matrix is interpreted such that a point (x, y) on the original image is moved to transform * (x, y) in the generated image.
-    Mathematically speaking, that means that the matrix is a transformation from the transformed image space to the original image space.
-
-    Parameters:
-      matrix: A homogeneous 3 by 3 matrix holding representing the transformation to apply.
-      image:  The image to transform.
-      params: The transform parameters (see TransformParameters)
-    """
-    if params.channel_axis != 2:
-        image = np.moveaxis(image, params.channel_axis, 2)
-
-    output = cv2.warpAffine(
-        image,
-        matrix[:2, :],
-        dsize       = (image.shape[1], image.shape[0]),
-        flags       = params.cvInterpolation(),
-        borderMode  = params.cvBorderMode(),
-        borderValue = params.cval,
-    )
-
-    if params.channel_axis != 2:
-        output = np.moveaxis(output, 2, params.channel_axis)
-    return output
-
-
-def resize_image(img, min_side=800, max_side=1333):
-    (rows, cols, _) = img.shape
-
-    smallest_side = min(rows, cols)
-
-    # rescale the image so the smallest side is min_side
-    scale = min_side / smallest_side
-
-    # check if the largest side is now greater than max_side, which can happen
-    # when images have a large aspect ratio
-    largest_side = max(rows, cols)
-    if largest_side * scale > max_side:
-        scale = max_side / largest_side
-
-    # resize the image with the computed scale
-    img = cv2.resize(img, None, fx=scale, fy=scale)
-
-    return img, scale
+    return width, height

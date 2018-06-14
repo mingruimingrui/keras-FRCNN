@@ -61,7 +61,7 @@ def create_callback(training_model, prediction_model, validation_generator, back
         checkpoint = keras.callbacks.ModelCheckpoint(
             os.path.join(
                 args.snapshot_path,
-                'retinanet_{}_coco_{{epoch:02d}}.h5'.format(backbone_name)
+                'retinanet_{}_kitti_{{epoch:02d}}.h5'.format(backbone_name)
             ),
             verbose=1,
             save_weights_only=False,
@@ -130,8 +130,8 @@ def make_models(model_config, args):
 
 def load_datasets(args):
     # Load dataset information
-    train_set      = CocoDataset(args.coco_path, 'instances_train2017.json', 'train2017')
-    validation_set = CocoDataset(args.coco_path, 'instances_val2017.json'  , 'val2017'  )
+    train_set      = CocoDataset(args.kitti_path, 'instances_local_train.json', 'training')
+    validation_set = CocoDataset(args.kitti_path, 'instances_local_val.json'  , 'training')
 
     return train_set, validation_set
 
@@ -170,8 +170,8 @@ def parse_args(args):
     parser = argparse.ArgumentParser(description='Demo training script for training a RetinaNet network.')
 
     # Most frequently used params
-    parser.add_argument('--coco-path',
-        help='Path to dataset directory (ie. /tmp/COCO)',
+    parser.add_argument('--kitti-path',
+        help='Path to dataset directory (ie. /tmp/KITTI)',
         type=str, required=True)
     parser.add_argument('--num-gpu',
         help='Number of gpus to train model with, you must train with atleast 1 GPU',

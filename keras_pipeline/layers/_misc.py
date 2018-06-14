@@ -12,3 +12,37 @@ class ResizeTo(keras.layers.Layer):
 
     def compute_output_shape(self, input_shape):
         return (input_shape[0][0],) + input_shape[1][1:3] + (input_shape[0][-1],)
+
+
+class InceptionPreprocess(keras.layers.Layer):
+    """Performs preprocessing for a resnet backbone"""
+    def __init__(self, *args, **kwargs):
+        _SCALE = 1 / 127.5
+        _BIAS = -np.array([1, 1, 1], keras.backend.floatx())
+        self.scale = keras.backend.constant(_SCALE)
+        self.bias  = keras.backend.constant(_BIAS)
+        super(InceptionPreprocess, self).__init__(*args, **kwargs)
+
+    def call(self, inputs, **kwargs):
+        x = inputs * self.scale
+        x = keras.backend.bias_add(x, self.bias)
+        return x
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
+
+
+class ResNetPreprocess(keras.layers.Layer):
+    """Performs preprocessing for a resnet backbone"""
+    def __init__(self, *args, **kwargs):
+        _RESNET_MEAN = np.array([103.939, 116.779, 123.68], keras.backend.floatx())
+        self.bias = keras.backend.constant(-_RESNET_MEAN)
+        super(ResNetPreprocess, self).__init__(*args, **kwargs)
+
+    def call(self, inputs, **kwargs):
+        x = inputs[..., ::-1]
+        x = keras.backend.bias_add(x, self.bias)
+        return x
+
+    def compute_output_shape(self, input_shape):
+        return input_shape

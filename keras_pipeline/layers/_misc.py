@@ -16,17 +16,16 @@ class ResizeTo(keras.layers.Layer):
 
 
 class InceptionPreprocess(keras.layers.Layer):
-    """Performs preprocessing for a resnet backbone"""
+    """Performs preprocessing for a inception backbone"""
     def __init__(self, *args, **kwargs):
-        _SCALE = 1 / 127.5
-        _BIAS = -np.array([1, 1, 1], keras.backend.floatx())
-        self.scale = keras.backend.constant(_SCALE)
-        self.bias  = keras.backend.constant(_BIAS)
+        _INCEPTION_SCALE = 1 / 127.5
+        _INCEPTION_BIAS  = -1
+        self.scale = keras.backend.constant(_INCEPTION_SCALE)
+        self.bias  = keras.backend.constant(_INCEPTION_BIAS)
         super(InceptionPreprocess, self).__init__(*args, **kwargs)
 
     def call(self, inputs, **kwargs):
-        x = inputs * self.scale
-        x = keras.backend.bias_add(x, self.bias)
+        x = inputs * self.scale + self.bias
         return x
 
     def compute_output_shape(self, input_shape):

@@ -87,10 +87,9 @@ def create_callback(training_model, prediction_model, validation_generator, back
     return callbacks
 
 
-def make_generators(train_set, validation_set, backbone_name, compute_anchors, args):
+def make_generators(train_set, validation_set, compute_anchors, args):
     train_generator_config = GeneratorConfig(
         dataset = train_set,
-        backbone_name = backbone_name,
         compute_anchors = compute_anchors,
         batch_size = args.batch_size,
         allow_transform = True,
@@ -101,7 +100,6 @@ def make_generators(train_set, validation_set, backbone_name, compute_anchors, a
 
     validation_generator_config = GeneratorConfig(
         dataset = validation_set,
-        backbone_name = backbone_name,
         compute_anchors = compute_anchors,
         batch_size = args.batch_size
     )
@@ -170,9 +168,9 @@ def parse_args(args):
     parser = argparse.ArgumentParser(description='Demo training script for training a RetinaNet network for person detection')
 
     # Most frequently used params
-    parser.add_argument('--coco-path',
+    parser.add_argument(metavar='COCO_PATH', dest='coco_path',
         help='Path to dataset directory (ie. /tmp/COCO)',
-        type=str, required=True)
+        type=str)
     parser.add_argument('--num-gpu',
         help='Number of gpus to train model with, you must train with atleast 1 GPU',
         default=1, type=int)
@@ -236,7 +234,6 @@ def main():
     print('This can take a while...')
     train_generator, validation_generator = make_generators(
         train_set, validation_set,
-        backbone_name = model_config.backbone_name,
         compute_anchors = model_config.compute_anchors,
         args = args
     )

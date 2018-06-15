@@ -1,16 +1,28 @@
 import keras
 import keras_resnet.models
+from .. import layers
+
+
+custom_objects = {
+    'ResNetPreprocess' : layers.ResNetPreprocess
+}
+custom_objects.update(keras_resnet.custom_objects)
 
 
 def ResNet18(input_tensor, include_top=True, freeze_backbone=False):
-    """ Loads a resnet 18 model """
-    resnet_model = keras_resnet.models.ResNet34(input_tensor, include_top=include_top, freeze_bn=True)
+    """ Loads a resnet 18 model with preprocessing """
+    x = layers.ResNetPreprocess()(input_tensor)
+    resnet_model = keras_resnet.models.ResNet18(x, include_top=include_top, freeze_bn=True)
 
     if freeze_backbone:
         for layer in resnet_model.layers:
             layer.trainable = False
 
-    return resnet_model
+    return keras.Model(
+        inputs = input_tensor,
+        outputs = resnet_model.output,
+        name = 'vgg16'
+    )
 
 
 def ResNet18Backbone(input_tensor, freeze_backbone=False):
@@ -32,8 +44,9 @@ def ResNet18Backbone(input_tensor, freeze_backbone=False):
 
 
 def ResNet34(input_tensor, include_top=True, freeze_backbone=False):
-    """ Loads a resnet 34 model """
-    resnet_model = keras_resnet.models.ResNet34(input_tensor, include_top=include_top, freeze_bn=True)
+    """ Loads a resnet 34 model with preprocessing """
+    x = layers.ResNetPreprocess()(input_tensor)
+    resnet_model = keras_resnet.models.ResNet34(x, include_top=include_top, freeze_bn=True)
 
     if freeze_backbone:
         for layer in resnet_model.layers:
@@ -61,8 +74,9 @@ def ResNet34Backbone(input_tensor, freeze_backbone=False):
 
 
 def ResNet50(input_tensor, include_top=True, freeze_backbone=False):
-    """ Loads a resnet 50 model """
-    resnet_model = keras_resnet.models.ResNet50(input_tensor, include_top=include_top, freeze_bn=True)
+    """ Loads a resnet 50 model with preprocessing """
+    x = layers.ResNetPreprocess()(input_tensor)
+    resnet_model = keras_resnet.models.ResNet50(x, include_top=include_top, freeze_bn=True)
 
     if freeze_backbone:
         for layer in resnet_model.layers:

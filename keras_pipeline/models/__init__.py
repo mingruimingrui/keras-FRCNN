@@ -3,15 +3,17 @@
 """Computer vision"""
 
 # General CV algorithms
-from .inception import InceptionV3
-from .resnet import ResNet18, ResNet34, ResNet50
-from .vgg import VGG16
-from .load_backbone import load_backbone
+from .inception import InceptionV3, InceptionV3Backbone
+from .resnet import ResNet18, ResNet18Backbone
+from .resnet import ResNet34, ResNet34Backbone
+from .resnet import ResNet50, ResNet50Backbone
+from .vgg import VGG16, VGG16Backbone
 
 # Detection
-from .retinanet import RetinaNet, RetinaNetTrain, RetinaNetFromTrain
-from .retinanet import LoadRetinaNet
 from .model_config import RetinaNetConfig
+from .retinanet import RetinaNet
+from .retinanet import RetinaNetTrain, RetinaNetFromTrain
+from .retinanet import LoadRetinaNet
 
 # Feature Extraction
 

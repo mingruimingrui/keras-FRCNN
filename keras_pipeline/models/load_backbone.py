@@ -41,12 +41,17 @@ def load_backbone(input_tensor, backbone_name, freeze_backbone=False):
 
     return backbone
 
+
 def load_backbone_custom_objects(backbone_name):
     """ Loads the custom objects needed for the backbone model (if any) """
 
-    if 'resnet' in backbone_name:
-        import keras_resnet
-        return keras_resnet.custom_objects
-
+    if 'inception' in backbone_name:
+        from .inception import custom_objects
+    elif 'resnet' in backbone_name:
+        from .resnet import custom_objects
+    elif 'vgg' in backbone_name:
+        from .vgg import custom_objects
     else:
-        return {}
+        raise Exception('{} is invalid backbone_name'.format(self.backbone_name))
+
+    return custom_objects

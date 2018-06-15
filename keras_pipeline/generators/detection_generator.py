@@ -88,7 +88,6 @@ class DetectionGenerator(object):
         _validate_dataset(config.dataset)
 
         self.data            = config.dataset
-        self.backbone_name   = config.backbone_name
         self.compute_anchors = config.compute_anchors
         self.batch_size      = config.batch_size
         self.image_min_side  = config.image_min_side

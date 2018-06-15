@@ -11,7 +11,6 @@ import warnings
 import keras
 
 from ..utils.anchors import anchor_targets_bbox, bbox_transform
-from ..preprocessing.image import preprocess_image
 from ..preprocessing.image_transform import (
     adjust_transform_for_image,
     apply_transform,
@@ -89,7 +88,6 @@ class DetectionGenerator(object):
         _validate_dataset(config.dataset)
 
         self.data            = config.dataset
-        self.backbone_name   = config.backbone_name
         self.compute_anchors = config.compute_anchors
         self.batch_size      = config.batch_size
         self.image_min_side  = config.image_min_side
@@ -159,9 +157,6 @@ class DetectionGenerator(object):
 
         return image_group, annotations_group
 
-    def preprocess_image(self, image):
-        return preprocess_image(image, backbone=self.backbone_name)
-
     def random_transform_entry(self, image, annotations):
         transformation = adjust_transform_for_image(next(self.transform_generator), image, self.transform_parameters.relative_translation)
 
@@ -177,9 +172,6 @@ class DetectionGenerator(object):
         return resize_image(image, min_side=self.image_min_side, max_side=self.image_max_side)
 
     def preprocess_entry(self, image, annotations):
-        # Preprocess the image
-        image = self.preprocess_image(image)
-
         # Apply transformation
         if self.transform_generator:
             image, annotations = self.random_transform_entry(image, annotations)
@@ -338,8 +330,8 @@ class DetectionGenerator(object):
             orig_image, image_scale = self.resize_image(orig_image)
             orig_annotations[:, :4] *= image_scale
 
-            # Perform image preprocessing
-            image_group = [self.preprocess_image(orig_image)]
+            # Recompile into group from
+            image_group = [orig_image]
             annotations_group = [orig_annotations]
 
             # Compuate network inputs

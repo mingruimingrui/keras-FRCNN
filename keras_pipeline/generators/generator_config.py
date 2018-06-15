@@ -23,13 +23,6 @@ class GeneratorConfig(ConfigTemplate):
         )
 
         self.add(
-            'backbone_name',
-            'Name of the backbone to your model (used to determine preprocessing to perform)',
-            required = True,
-            valid_options = ['inception_v3', 'resnet18', 'resnet34', 'resnet50', 'vgg16']
-        )
-
-        self.add(
             'compute_anchors',
             'REQUIRED if task is detection, function that returns the full list of anchors in [x1, y1, x2, y2] given an image_shape'
         )

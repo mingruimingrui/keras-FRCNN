@@ -4,8 +4,6 @@
 
 # General CV algorithms
 from .inception import InceptionV3, InceptionV3Backbone
-from .resnet import ResNet18, ResNet18Backbone
-from .resnet import ResNet34, ResNet34Backbone
 from .resnet import ResNet50, ResNet50Backbone
 from .vgg import VGG16, VGG16Backbone
 

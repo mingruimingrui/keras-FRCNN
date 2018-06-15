@@ -80,7 +80,7 @@ class RetinaNetConfig(ConfigTemplate):
             'backbone_name',
             'Loads a backbone based on a valid name',
             default = 'resnet50',
-            valid_options = ['inception_v3', 'resnet18', 'resnet34', 'resnet50', 'vgg16']
+            valid_options = ['inception_v3', 'resnet50', 'vgg16']
         )
 
         self.add(

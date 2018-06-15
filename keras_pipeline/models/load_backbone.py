@@ -20,14 +20,6 @@ def load_backbone(input_tensor, backbone_name, freeze_backbone=False):
         from .inception import InceptionV3Backbone
         backbone = InceptionV3Backbone(input_tensor, freeze_backbone=freeze_backbone)
 
-    elif backbone_name == 'resnet18':
-        from .resnet import ResNet18Backbone
-        backbone = ResNet18Backbone(input_tensor, freeze_backbone=freeze_backbone)
-
-    elif backbone_name == 'resnet34':
-        from .resnet import ResNet34Backbone
-        backbone = ResNet34Backbone(input_tensor, freeze_backbone=freeze_backbone)
-
     elif backbone_name == 'resnet50':
         from .resnet import ResNet50Backbone
         backbone = ResNet50Backbone(input_tensor, freeze_backbone=freeze_backbone)

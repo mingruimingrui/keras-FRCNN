@@ -13,32 +13,6 @@ def read_image(path):
     return np.asarray(Image.open(path).convert('RGB'))
 
 
-def preprocess_image_inception(x):
-    x = x.astype(keras.backend.floatx())
-    return keras.applications.inception_v3.preprocess_input(x)
-
-
-def preprocess_image_resnet(x):
-    x = x.astype(keras.backend.floatx())
-    return keras.applications.resnet50.preprocess_input(x)
-
-
-def preprocess_image_vgg(x):
-    x = x.astype(keras.backend.floatx())
-    return keras.applications.vgg16.preprocess_input(x)
-
-
-def preprocess_image(x, backbone):
-    if 'inception' in backbone:
-        return preprocess_image_inception(x)
-    elif 'resnet' in backbone:
-        return preprocess_image_resnet(x)
-    elif 'vgg' in backbone:
-        return preprocess_image_vgg(x)
-    else:
-        raise NotImplementedError("Your backbone {} has not been implemented".format(backbone))
-
-
 """ Following section is taken directly from
 https://github.com/scardine/image_size/blob/master/get_image_size.py """
 

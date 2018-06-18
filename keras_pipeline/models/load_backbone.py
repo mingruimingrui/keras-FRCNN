@@ -34,6 +34,22 @@ def load_backbone(input_tensor, backbone_name, freeze_backbone=False):
     return backbone
 
 
+def load_backbone_pyramid_feautre_shapes_fn(backbone_name):
+    """ Loads the function that computes pyramid feature shapes for a given image shape """
+
+    if 'inception' in backbone_name:
+        from .inception import compute_pyramid_feature_shapes_for_img_shape
+    elif 'resnet' in backbone_name:
+        from .resnet import compute_pyramid_feature_shapes_for_img_shape
+    elif 'vgg' in backbone_name:
+        from .vgg import compute_pyramid_feature_shapes_for_img_shape
+    else:
+        raise Exception('{} is invalid backbone_name'.format(self.backbone_name))
+
+    return compute_pyramid_feature_shapes_for_img_shape
+
+
+
 def load_backbone_custom_objects(backbone_name):
     """ Loads the custom objects needed for the backbone model (if any) """
 

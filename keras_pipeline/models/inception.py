@@ -1,3 +1,4 @@
+import numpy as np
 import keras
 from .. import layers
 
@@ -45,3 +46,19 @@ def InceptionV3Backbone(input_tensor, freeze_backbone=False):
         outputs = [C1, C2, C3, C4, C5],
         name = 'inception_backbone'
     )
+
+
+def compute_pyramid_feature_shapes_for_img_shape(image_shape):
+    C0_shape = np.array(image_shape[:2])
+
+    C1_shape = np.ceil((C0_shape - 2) / 2) - 2
+    C2_shape = np.ceil((C1_shape - 2) / 2) - 2
+
+    P3_shape = np.ceil((C2_shape - 2) / 2)
+    P4_shape = np.ceil((P3_shape - 2) / 2)
+    P5_shape = np.ceil((P4_shape - 2) / 2)
+
+    P6_shape = np.ceil(P5_shape / 2)
+    P7_shape = np.ceil(P6_shape / 2)
+
+    return P3_shape, P4_shape, P5_shape, P6_shape, P7_shape

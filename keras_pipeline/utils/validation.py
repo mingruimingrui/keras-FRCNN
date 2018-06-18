@@ -13,5 +13,12 @@ def is_list_like(x):
     return isinstance(x, (list, tuple, np.ndarray))
 
 
-def is_positive(x):
-    return x > 0
+def is_valid_img_shape(x):
+    return len(x) == 3
+
+
+def is_valid_input_tensor(input_tensor):
+    valid_type = type(input_tensor) == type(keras.Input(shape=(1, 1)))
+    valid_len  = len(input_tensor) == 3
+
+    return valid_type & valid_len

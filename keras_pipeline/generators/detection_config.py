@@ -8,11 +8,11 @@ from ..datasets._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image_transform import TransformParameters
 
 
-class GeneratorConfig(ConfigTemplate):
-    """ For help on GeneratorConfig, use GeneratorConfig(help=True) """
+class DetectionGeneratorConfig(ConfigTemplate):
+    """ For help on DetectionGeneratorConfig, use DetectionGeneratorConfig(help=True) """
 
     def __init__(self, help=False, **kwargs):
-        self.__name__ = 'GeneratorConfig'
+        self.__name__ = 'DetectionGeneratorConfig'
         self.__params__ = OrderedDict()
 
         # Most frequently used parameters
@@ -204,7 +204,7 @@ class GeneratorConfig(ConfigTemplate):
             model_config.compute_pyramid_feature_shapes_for_img_shape
 
         # Run the standard
-        super(GeneratorConfig, self)._validate_kwargs_(**kwargs)
+        super(DetectionGeneratorConfig, self)._validate_kwargs_(**kwargs)
 
 
         # This is default parameters for misc transformation parameters

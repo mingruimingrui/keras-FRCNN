@@ -15,7 +15,7 @@ from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFrom
 
 # Dataset and generator
 from keras_pipeline.datasets import DetectionDataset
-from keras_pipeline.generators import GeneratorConfig, DetectionGenerator
+from keras_pipeline.generators import DetectionGeneratorConfig, DetectionGenerator
 
 # Evaluation callbacks
 from keras_pipeline.callbacks import RedirectModel
@@ -88,7 +88,7 @@ def create_callback(training_model, prediction_model, validation_generator, back
 
 
 def make_generators(train_set, validation_set, model_config, args):
-    train_generator_config = GeneratorConfig(
+    train_generator_config = DetectionGeneratorConfig(
         dataset = train_set,
         model_config = model_config,
         batch_size = args.batch_size,
@@ -98,7 +98,7 @@ def make_generators(train_set, validation_set, model_config, args):
 
     train_generator = DetectionGenerator(train_generator_config)
 
-    validation_generator_config = GeneratorConfig(
+    validation_generator_config = DetectionGeneratorConfig(
         dataset = validation_set,
         model_config = model_config,
         batch_size = args.batch_size

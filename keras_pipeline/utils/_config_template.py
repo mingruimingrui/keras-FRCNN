@@ -2,6 +2,7 @@ import sys
 import inspect
 import numpy as np
 from collections import OrderedDict
+from ..utils.collections import AttrDict
 
 
 class ConfigTemplate:
@@ -123,13 +124,21 @@ class ConfigTemplate:
         print('\n*** End of Parameter Guide ***')
 
 
-    def to_dict(self):
-        param_dict = {}
+    def as_attr_dict(self):
+        # Determine attributes to be transfered into AttrDict
+        attributes = [attr for attr in dir(self) if
+            not attr.startswith('_') and
+            attr not in ['add', 'help', 'as_attr_dict']]
 
-        for param_name, param_reqs in self.__params__.items():
-            param_dict[param_name] = getattr(self, param_name)
+        # Create a copy of self as an AttrDict
+        copy_self = AttrDict()
+        for attr in attributes:
+            setattr(copy_self, attr, getattr(self, attr))
 
-        return param_dict
+        # Enforce self to be immutable
+        copy_self.immutable(True)
+
+        return copy_self
 
 
 def print_condition(condition):

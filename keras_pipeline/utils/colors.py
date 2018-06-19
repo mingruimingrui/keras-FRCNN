@@ -12,6 +12,8 @@ def label_color(label):
 
         If no color is defined for a certain label, the color green is returned and a warning is printed.
     """
+    label = int(label)
+
     if label < len(colors):
         return colors[label]
     else:

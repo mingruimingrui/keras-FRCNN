@@ -14,7 +14,7 @@ if __name__ == "__main__" and __package__ is None:
 from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFromTrain, LoadRetinaNet
 
 # Dataset and generator
-from keras_pipeline.datasets import CocoDataset
+from keras_pipeline.datasets import DetectionDataset
 from keras_pipeline.generators import GeneratorConfig, DetectionGenerator
 
 # Evaluation callbacks
@@ -128,8 +128,8 @@ def make_models(model_config, args):
 
 def load_datasets(args):
     # Load dataset information
-    train_set      = CocoDataset(args.kitti_path, 'instances_local_train.json', 'training')
-    validation_set = CocoDataset(args.kitti_path, 'instances_local_val.json'  , 'training')
+    train_set      = DetectionDataset(args.kitti_path, 'instances_local_train.json', 'training')
+    validation_set = DetectionDataset(args.kitti_path, 'instances_local_val.json'  , 'training')
 
     return train_set, validation_set
 
@@ -247,7 +247,7 @@ def main():
         backbone_name=model_config.backbone_name,
         args=args
     )
-    sys.exit('DEBUG')
+
     # start_training
     print('\n==== Training Model ====')
     initial_epoch = determine_initial_epoch(args)

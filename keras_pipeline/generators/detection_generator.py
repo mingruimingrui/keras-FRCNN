@@ -93,7 +93,7 @@ class DetectionGenerator(object):
         # here dataset is the only object attribute
         # generally object and callable attributes in the generator is
         # ill adviced due to to their sometimes unpickable nature
-        # The CocoDataset object is picklable
+        # The DetectionDataset object is picklable
         self.data            = config.dataset
         self.batch_size      = config.batch_size
         self.image_min_side  = config.image_min_side

@@ -25,16 +25,17 @@ class GeneratorConfig(ConfigTemplate):
 
         self.add(
             'model_config',
-            'Used to extract model internal structures are needed to generate anchors. ' + \
-            'Simply needs to be an object with the attributes anchor_sizes, anchor_strides, '+ \
-            'anchor_ratios, anchor_scales and compute_pyramid_feature_shapes_for_img_shape. ' + \
-            'Either this variable or all the anchor parameters and ' + \
-            'compute_pyramid_feature_shapes_for_img_shape must have values'
+            'Used to extract model internal structures are needed to generate anchors.\n' + \
+            ' ' * 22 + 'Simply needs to be an object with the attributes anchor_sizes, anchor_strides,\n' + \
+            ' ' * 22 + 'anchor_ratios, anchor_scales and compute_pyramid_feature_shapes_for_img_shape.\n' + \
+            ' ' * 22 + 'Either this variable or all the anchor parameters and\n' + \
+            ' ' * 22 + 'compute_pyramid_feature_shapes_for_img_shape must have values'
         )
 
         self.add(
             'batch_size',
-            'Number of images to be processed in parallel during training recommended 32 for classification 1 for detection',
+            'Number of images to be processed in parallel during training recommended 32 for\n' + \
+            ' ' * 22 + 'classification 1 for detection',
             default = 1,
             accepted_types = 'int-like'
         )
@@ -50,30 +51,35 @@ class GeneratorConfig(ConfigTemplate):
         self.add(
             'anchor_sizes',
             'Required if model_config not provided, used to define dimensions of anchors',
-            accepted_types = 'list-like'
+            accepted_types = 'list-like',
+            required = True
         )
 
         self.add(
             'anchor_strides',
             'Required if model_config not provided, used to define dimensions of anchors',
-            accepted_types = 'list-like'
+            accepted_types = 'list-like',
+            required = True
         )
 
         self.add(
             'anchor_ratios',
             'Required if model_config not provided, used to define dimensions of anchors',
-            accepted_types = 'list-like'
+            accepted_types = 'list-like',
+            required = True
         )
 
         self.add(
             'anchor_scales',
             'Required if model_config not provided, used to define dimensions of anchors',
-            accepted_types = 'list-like'
+            accepted_types = 'list-like',
+            required = True
         )
 
         self.add(
             'compute_pyramid_feature_shapes_for_img_shape',
-            'Required if model_config not provided, used to define dimensions of anchors'
+            'Required if model_config not provided, used to define dimensions of anchors',
+            required = True
         )
 
         # Training input size Parameters
@@ -187,10 +193,9 @@ class GeneratorConfig(ConfigTemplate):
     def _validate_kwargs_(self, **kwargs):
         # Remove and process model_config separately
         del self.__params__['model_config']
-
-        assert 'model_config' in kwargs, 'model_config is a required field'
         model_config = kwargs['model_config']
 
+        # We simply replace default with model_config
         self.__params__['anchor_sizes']  ['default'] = model_config.anchor_sizes
         self.__params__['anchor_strides']['default'] = model_config.anchor_strides
         self.__params__['anchor_ratios'] ['default'] = model_config.anchor_ratios
@@ -200,6 +205,7 @@ class GeneratorConfig(ConfigTemplate):
 
         # Run the standard
         super(GeneratorConfig, self)._validate_kwargs_(**kwargs)
+
 
         # This is default parameters for misc transformation parameters
         # Eg. padding_mode, image_interpolation, fill_value...

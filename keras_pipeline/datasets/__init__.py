@@ -1,1 +1,1 @@
-from .coco import CocoDataset
+from .detection import DetectionDataset

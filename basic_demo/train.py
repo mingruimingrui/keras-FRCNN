@@ -11,11 +11,16 @@ if __name__ == "__main__" and __package__ is None:
     __package__ = "keras_pipeline"
 
 # Model
-from keras_pipeline.models import RetinaNetConfig, RetinaNetTrain, RetinaNetFromTrain, LoadRetinaNet
+from keras_pipeline.models import RetinaNetConfig
+from keras_pipeline.models import (
+    RetinaNetTrain,
+    RetinaNetFromTrain,
+    LoadRetinaNet
+)
 
 # Dataset and generator
-from keras_pipeline.datasets import CocoDataset
-from keras_pipeline.generators import GeneratorConfig, DetectionGenerator
+from keras_pipeline.datasets import DetectionDataset
+from keras_pipeline.generators import DetectionGeneratorConfig, DetectionGenerator
 
 # Evaluation callbacks
 from keras_pipeline.callbacks import RedirectModel
@@ -87,10 +92,10 @@ def create_callback(training_model, prediction_model, validation_generator, back
     return callbacks
 
 
-def make_generators(train_set, validation_set, compute_anchors, args):
-    train_generator_config = GeneratorConfig(
+def make_generators(train_set, validation_set, model_config, args):
+    train_generator_config = DetectionGeneratorConfig(
         dataset = train_set,
-        compute_anchors = compute_anchors,
+        model_config = model_config,
         batch_size = args.batch_size,
         allow_transform = True,
         shuffle_groups = True
@@ -98,9 +103,9 @@ def make_generators(train_set, validation_set, compute_anchors, args):
 
     train_generator = DetectionGenerator(train_generator_config)
 
-    validation_generator_config = GeneratorConfig(
+    validation_generator_config = DetectionGeneratorConfig(
         dataset = validation_set,
-        compute_anchors = compute_anchors,
+        model_config = model_config,
         batch_size = args.batch_size
     )
 
@@ -128,8 +133,8 @@ def make_models(model_config, args):
 
 def load_datasets(args):
     # Load dataset information
-    train_set      = CocoDataset(args.coco_path, 'instances_train2017.json', 'train2017')
-    validation_set = CocoDataset(args.coco_path, 'instances_val2017.json'  , 'val2017'  )
+    train_set      = DetectionDataset(args.coco_path, 'instances_train2017.json', 'train2017')
+    validation_set = DetectionDataset(args.coco_path, 'instances_val2017.json'  , 'val2017'  )
 
     return train_set, validation_set
 
@@ -234,7 +239,7 @@ def main():
     print('This can take a while...')
     train_generator, validation_generator = make_generators(
         train_set, validation_set,
-        compute_anchors = model_config.compute_anchors,
+        model_config = model_config,
         args = args
     )
     print('Data Generators created')
@@ -247,7 +252,7 @@ def main():
         backbone_name=model_config.backbone_name,
         args=args
     )
-    sys.exit('DBUEG')
+
     # start_training
     print('\n==== Training Model ====')
     initial_epoch = determine_initial_epoch(args)

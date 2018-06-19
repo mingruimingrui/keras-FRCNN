@@ -2,9 +2,7 @@ from __future__ import division
 
 import os
 import struct
-import collections
 
-import keras
 import numpy as np
 from PIL import Image
 

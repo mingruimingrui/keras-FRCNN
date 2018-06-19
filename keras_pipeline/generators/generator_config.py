@@ -25,17 +25,17 @@ class GeneratorConfig(ConfigTemplate):
 
         self.add(
             'model_config',
-            'Used to extract model internal structures are needed to generate anchors.\n' + \
-            ' ' * 22 + 'Simply needs to be an object with the attributes anchor_sizes, anchor_strides,\n' + \
-            ' ' * 22 + 'anchor_ratios, anchor_scales and compute_pyramid_feature_shapes_for_img_shape.\n' + \
-            ' ' * 22 + 'Either this variable or all the anchor parameters and\n' + \
-            ' ' * 22 + 'compute_pyramid_feature_shapes_for_img_shape must have values'
+            'Used to extract model internal structures are needed to generate anchors. ' + \
+            'Simply needs to be an object with the attributes anchor_sizes, anchor_strides, ' + \
+            'anchor_ratios, anchor_scales and compute_pyramid_feature_shapes_for_img_shape. ' + \
+            'Either this variable or all the anchor parameters and ' + \
+            'compute_pyramid_feature_shapes_for_img_shape must have values'
         )
 
         self.add(
             'batch_size',
-            'Number of images to be processed in parallel during training recommended 32 for\n' + \
-            ' ' * 22 + 'classification 1 for detection',
+            'Number of images to be processed in parallel during training recommended 32 for ' + \
+            'classification 1 for detection',
             default = 1,
             accepted_types = 'int-like'
         )

@@ -1,5 +1,7 @@
 """ Script used for frequently used variable verifiers """
 
+import numpy as np
+
 
 def is_int_like(x):
     return np.issubdtype(type(x), np.integer)

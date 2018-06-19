@@ -59,10 +59,10 @@ class RetinaNetConfig(ConfigTemplate):
 
         self.add(
             'regression_loss',
-            'A regression loss function, default smooth_l1_loss\n'            + ' ' * 21 + \
-                'Do note that the expected y_true shape is (None, None, 5)\n' + ' ' * 21 + \
-                'and expected y_pred shape is (None, None, 4)\n'              + ' ' * 21 + \
-                'Last channel in y_true is to determine if anchor should be ignored',
+            'A regression loss function, default smooth_l1_loss '        + \
+            'Do note that the expected y_true shape is (None, None, 5) ' + \
+            'and expected y_pred shape is (None, None, 4). '              + \
+            'Last channel in y_true is to determine if anchor should be ignored',
             default = losses.make_detection_smooth_l1_loss()
         )
 

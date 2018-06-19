@@ -9,7 +9,7 @@ from ..utils.validation import (
     is_valid_input_tensor
 )
 
-from .load_backbone import load_backbone_pyramid_feautre_shapes_fn
+from .backbone import load_backbone_pyramid_feautre_shapes_fn
 from ..utils import anchors as util_anchors
 from .. import losses
 

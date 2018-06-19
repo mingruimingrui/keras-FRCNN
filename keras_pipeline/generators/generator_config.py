@@ -1,6 +1,8 @@
 import cv2
 from collections import OrderedDict
 
+from ..utils import anchors as util_anchors
+
 from ..utils._config_template import ConfigTemplate
 from ..datasets._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image_transform import TransformParameters
@@ -18,13 +20,16 @@ class GeneratorConfig(ConfigTemplate):
         self.add(
             'dataset',
             'Dataset for this generator',
-            required = True,
-            condition = lambda x: hasattr(x, 'load_annotations_array')
+            required = True
         )
 
         self.add(
-            'compute_anchors',
-            'REQUIRED if task is detection, function that returns the full list of anchors in [x1, y1, x2, y2] given an image_shape'
+            'model_config',
+            'Used to extract model internal structures are needed to generate anchors. ' + \
+            'Simply needs to be an object with the attributes anchor_sizes, anchor_strides, '+ \
+            'anchor_ratios, anchor_scales and compute_pyramid_feature_shapes_for_img_shape. ' + \
+            'Either this variable or all the anchor parameters and ' + \
+            'compute_pyramid_feature_shapes_for_img_shape must have values'
         )
 
         self.add(
@@ -39,6 +44,36 @@ class GeneratorConfig(ConfigTemplate):
             'Flag that allows the generator to perform transformation on images',
             default = False,
             accepted_types = bool
+        )
+
+        # If not providing model_config
+        self.add(
+            'anchor_sizes',
+            'Required if model_config not provided, used to define dimensions of anchors',
+            accepted_types = 'list-like'
+        )
+
+        self.add(
+            'anchor_strides',
+            'Required if model_config not provided, used to define dimensions of anchors',
+            accepted_types = 'list-like'
+        )
+
+        self.add(
+            'anchor_ratios',
+            'Required if model_config not provided, used to define dimensions of anchors',
+            accepted_types = 'list-like'
+        )
+
+        self.add(
+            'anchor_scales',
+            'Required if model_config not provided, used to define dimensions of anchors',
+            accepted_types = 'list-like'
+        )
+
+        self.add(
+            'compute_pyramid_feature_shapes_for_img_shape',
+            'Required if model_config not provided, used to define dimensions of anchors'
         )
 
         # Training input size Parameters
@@ -148,10 +183,36 @@ class GeneratorConfig(ConfigTemplate):
         else:
             self._validate_kwargs_(**kwargs)
 
+
     def _validate_kwargs_(self, **kwargs):
+        # Remove and process model_config separately
+        del self.__params__['model_config']
+
+        assert 'model_config' in kwargs, 'model_config is a required field'
+        model_config = kwargs['model_config']
+
+        self.__params__['anchor_sizes']  ['default'] = model_config.anchor_sizes
+        self.__params__['anchor_strides']['default'] = model_config.anchor_strides
+        self.__params__['anchor_ratios'] ['default'] = model_config.anchor_ratios
+        self.__params__['anchor_scales'] ['default'] = model_config.anchor_scales
+        self.__params__['compute_pyramid_feature_shapes_for_img_shape']['default'] = \
+            model_config.compute_pyramid_feature_shapes_for_img_shape
+
+        # Run the standard
         super(GeneratorConfig, self)._validate_kwargs_(**kwargs)
 
         # This is default parameters for misc transformation parameters
         # Eg. padding_mode, image_interpolation, fill_value...
         # There are no plans on adding this to the list of variables available
         self.transform_parameters = TransformParameters()
+
+
+    def compute_anchors(self, image_shape):
+        return util_anchors.compute_all_anchors(
+            image_shape,
+            sizes = self.anchor_sizes,
+            strides = self.anchor_strides,
+            ratios = self.anchor_ratios,
+            scales = self.anchor_scales,
+            shapes_callback = self.compute_pyramid_feature_shapes_for_img_shape,
+        )

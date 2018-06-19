@@ -87,10 +87,10 @@ def create_callback(training_model, prediction_model, validation_generator, back
     return callbacks
 
 
-def make_generators(train_set, validation_set, compute_anchors, args):
+def make_generators(train_set, validation_set, model_config, args):
     train_generator_config = GeneratorConfig(
         dataset = train_set,
-        compute_anchors = compute_anchors,
+        model_config = model_config,
         batch_size = args.batch_size,
         allow_transform = True,
         shuffle_groups = True
@@ -100,7 +100,7 @@ def make_generators(train_set, validation_set, compute_anchors, args):
 
     validation_generator_config = GeneratorConfig(
         dataset = validation_set,
-        compute_anchors = compute_anchors,
+        model_config = model_config,
         batch_size = args.batch_size
     )
 
@@ -234,7 +234,7 @@ def main():
     print('This can take a while...')
     train_generator, validation_generator = make_generators(
         train_set, validation_set,
-        compute_anchors = model_config.compute_anchors,
+        model_config = model_config,
         args = args
     )
     print('Data Generators created')
@@ -247,7 +247,7 @@ def main():
         backbone_name=model_config.backbone_name,
         args=args
     )
-    sys.exit('DBUEG')
+
     # start_training
     print('\n==== Training Model ====')
     initial_epoch = determine_initial_epoch(args)

@@ -1,4 +1,4 @@
-""" Script used to load a backbone as described in FPN
+""" Script used to load a backbone as described in FPN paper https://arxiv.org/abs/1612.03144
 Also serves the dual purpose of loading a backbone (simply take the last output in the list of outputs)
 """
 

@@ -171,10 +171,6 @@ class RetinaNetConfig(ConfigTemplate):
         return len(self.anchor_ratios) * len(self.anchor_scales)
 
 
-    # def compute_pyramid_feature_shapes_for_img_shape(self, image_shape):
-    #     return self._compute_pyramid_feature_shapes_for_img_shape(None, image_shape)
-
-
     def compute_anchors(self, image_shape):
         return util_anchors.compute_all_anchors(
             image_shape,

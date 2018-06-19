@@ -1,5 +1,4 @@
 import tensorflow
-import keras
 
 
 def top_k(*args, **kwargs):

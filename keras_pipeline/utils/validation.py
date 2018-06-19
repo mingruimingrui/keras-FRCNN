@@ -1,6 +1,7 @@
 """ Script used for frequently used variable verifiers """
 
 import numpy as np
+import keras
 
 
 def is_int_like(x):

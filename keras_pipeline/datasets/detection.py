@@ -1,6 +1,5 @@
 import os
 import numpy as np
-from PIL import Image
 
 from pycocotools.coco import COCO
 from ._ImageDatasetTemplate import ImageDatasetTemplate

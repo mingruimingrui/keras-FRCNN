@@ -29,7 +29,7 @@ def load_backbone(input_tensor, backbone_name, freeze_backbone=False):
         backbone = VGG16Backbone(input_tensor, freeze_backbone=freeze_backbone)
 
     else:
-        raise Exception('{} is invalid backbone_name'.format(self.backbone_name))
+        raise Exception('{} is invalid backbone_name'.format(backbone_name))
 
     return backbone
 
@@ -44,7 +44,7 @@ def load_backbone_pyramid_feautre_shapes_fn(backbone_name):
     elif 'vgg' in backbone_name:
         from .vgg import compute_pyramid_feature_shapes_for_img_shape
     else:
-        raise Exception('{} is invalid backbone_name'.format(self.backbone_name))
+        raise Exception('{} is invalid backbone_name'.format(backbone_name))
 
     return compute_pyramid_feature_shapes_for_img_shape
 
@@ -60,6 +60,6 @@ def load_backbone_custom_objects(backbone_name):
     elif 'vgg' in backbone_name:
         from .vgg import custom_objects
     else:
-        raise Exception('{} is invalid backbone_name'.format(self.backbone_name))
+        raise Exception('{} is invalid backbone_name'.format(backbone_name))
 
     return custom_objects

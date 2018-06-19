@@ -1,10 +1,8 @@
-import cv2
 from collections import OrderedDict
 
 from ..utils import anchors as util_anchors
 
 from ..utils._config_template import ConfigTemplate
-from ..datasets._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image_transform import TransformParameters
 
 

@@ -34,8 +34,8 @@ class DetectionGeneratorConfig(ConfigTemplate):
 
         self.add(
             'batch_size',
-            'Number of images to be processed in parallel during training recommended 32 for ' + \
-            'classification 1 for detection',
+            'Number of images to be processed in parallel during training recommended 1 for ' + \
+            'detection due to the high memory cost',
             default = 1,
             accepted_types = 'int-like'
         )

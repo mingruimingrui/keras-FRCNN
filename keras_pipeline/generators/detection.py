@@ -10,13 +10,22 @@ import warnings
 
 import keras
 
-from ..utils.anchors import anchor_targets_bbox, bbox_transform
+from ..utils.anchors import (
+    anchor_targets_bbox,
+    bbox_transform,
+    compute_all_anchors
+)
+
 from ..preprocessing.image_transform import (
     adjust_transform_for_image,
     apply_transform,
     resize_image
 )
-from ..preprocessing.transform import random_transform_generator, transform_aabb
+
+from ..preprocessing.transform import (
+    random_transform_generator,
+    transform_aabb
+)
 
 
 """ These functions written outside are those that
@@ -75,24 +84,29 @@ def _validate_dataset(dataset):
     dataset.load_annotations(img_id)
     dataset.load_annotations_array(img_id)
 
-def _validate_config(config):
-    """ Validates that config is suitable for a detection task """
-    assert config.compute_anchors is not None, 'For detection and segmentation tasks, compute_anchors is required.'
-    assert config.compute_anchors((800, 800, 3))[0].shape == (4,), 'compute_anchors not outputting the correct shape'
-
 
 
 class DetectionGenerator(object):
     def __init__(self, config):
-        _validate_config(config)
         _validate_dataset(config.dataset)
 
+        # here dataset is the only object attribute
+        # generally object and callable attributes in the generator is
+        # ill adviced due to to their sometimes unpickable nature
+        # The DetectionDataset object is picklable
         self.data            = config.dataset
-        self.compute_anchors = config.compute_anchors
         self.batch_size      = config.batch_size
         self.image_min_side  = config.image_min_side
         self.image_max_side  = config.image_max_side
         self.shuffle         = config.shuffle_groups
+
+        # Compute anchors variables
+        self.anchor_sizes   = config.anchor_sizes
+        self.anchor_strides = config.anchor_strides
+        self.anchor_ratios  = config.anchor_ratios
+        self.anchor_scales  = config.anchor_scales
+        self.compute_pyramid_feature_shapes_for_img_shape = \
+            config.compute_pyramid_feature_shapes_for_img_shape
 
         # Define groups (1 group ==  1 batch)
         self.groups = _group_image_ids(
@@ -111,6 +125,19 @@ class DetectionGenerator(object):
         # Create the tools which helps define the order in which the
         self.lock = threading.Lock() # this is to allow for parrallel batch processing
         self.group_index_generator = self._make_index_generator(len(self.groups))
+
+    ###########################################################################
+    #### The compute anchors function
+
+    def compute_anchors(self, image_shape):
+        return compute_all_anchors(
+            image_shape,
+            sizes = self.anchor_sizes,
+            strides = self.anchor_strides,
+            ratios = self.anchor_ratios,
+            scales = self.anchor_scales,
+            shapes_callback = self.compute_pyramid_feature_shapes_for_img_shape,
+        )
 
     ###########################################################################
     #### This marks the start of _get_batches_of_transformed_samples helpers
@@ -343,4 +370,4 @@ class DetectionGenerator(object):
             # Increase counter
             i += 1
 
-            yield [inputs, orig_image], targets + [orig_annotations, image_scale]
+            yield inputs, targets + [orig_annotations, image_scale]

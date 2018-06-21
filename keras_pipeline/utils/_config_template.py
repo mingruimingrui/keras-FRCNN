@@ -1,7 +1,14 @@
 import sys
 import inspect
-import numpy as np
+import textwrap
 from collections import OrderedDict
+
+from .collections import AttrDict
+from .validation import (
+    is_int_like,
+    is_float_like,
+    is_list_like
+)
 
 
 class ConfigTemplate:
@@ -104,7 +111,8 @@ class ConfigTemplate:
             else:
                 print('\n    ==== Param_name - {} ===='.format(param_name))
 
-            print('    Description     - {}'.format(param_reqs['desc']))
+            # print('    Description     - {}'.format(param_reqs['desc']))
+            print_description(param_reqs['desc'])
             print('    Default         - {}'.format(param_reqs['default']))
 
             if param_reqs['accepted_types'] is not None:
@@ -123,13 +131,39 @@ class ConfigTemplate:
         print('\n*** End of Parameter Guide ***')
 
 
-    def to_dict(self):
-        param_dict = {}
+    def as_attr_dict(self):
+        # Determine attributes to be transfered into AttrDict
+        attributes = [attr for attr in dir(self) if
+            not attr.startswith('_') and
+            attr not in ['add', 'help', 'as_attr_dict']]
 
-        for param_name, param_reqs in self.__params__.items():
-            param_dict[param_name] = getattr(self, param_name)
+        # Create a copy of self as an AttrDict
+        copy_self = AttrDict()
+        for attr in attributes:
+            setattr(copy_self, attr, getattr(self, attr))
 
-        return param_dict
+        # Enforce self to be immutable
+        copy_self.immutable(True)
+
+        return copy_self
+
+
+def print_description(desc):
+    template    = '    Description     - {}'
+    indentation = '                      '
+
+    desc = template.format(desc)
+    lines = desc.split('\n')
+    new_lines = []
+
+    for l in lines:
+        if len(l) > 100:
+            l = textwrap.fill(l, width=100, subsequent_indent=indentation)
+
+        new_lines.append(l)
+
+    print(('\n' + indentation).join(new_lines))
+
 
 
 def print_condition(condition):
@@ -167,15 +201,3 @@ def check_accpted_types(accepted_types, param_val):
             raise ValueError('Invalid accepted_type received: {}'.format(at))
 
     return False
-
-
-def is_int_like(x):
-    return np.issubdtype(type(x), np.integer)
-
-
-def is_float_like(x):
-    return np.issubdtype(type(x), np.floating)
-
-
-def is_list_like(x):
-    return isinstance(x, (list, tuple, np.ndarray))

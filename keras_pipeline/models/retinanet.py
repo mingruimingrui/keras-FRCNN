@@ -5,7 +5,7 @@ import numpy as np
 import keras
 from .. import layers
 from .. import losses
-from .load_backbone import load_backbone, load_backbone_custom_objects
+from .backbone import load_backbone, load_backbone_custom_objects
 
 
 def default_classification_model(

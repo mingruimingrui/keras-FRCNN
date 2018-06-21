@@ -23,7 +23,7 @@ class EvaluateDetection(keras.callbacks.Callback):
         self.tensorboard     = tensorboard
         self.verbose         = verbose
 
-        super(Evaluate, self).__init__()
+        super(EvaluateDetection, self).__init__()
 
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}

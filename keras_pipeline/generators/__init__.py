@@ -1,2 +1,2 @@
-from .generator_config import GeneratorConfig
-from .detection_generator import DetectionGenerator
+from .detection_config import DetectionGeneratorConfig
+from .detection import DetectionGenerator

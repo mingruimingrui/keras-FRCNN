@@ -1,14 +1,15 @@
 import os
 import numpy as np
-from PIL import Image
 
 from pycocotools.coco import COCO
 from ._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image import read_image
 
-class CocoDataset(ImageDatasetTemplate):
-    """ COCO dataset API meant to be used by generators.DetectionGenerator
-    Requires your coco dataset to be setup in the following format
+class DetectionDataset(ImageDatasetTemplate):
+    """ Dataset API meant to be used by generators.DetectionGenerator
+    Leverages off pycocotools, you will have to provide an appropriate
+    annotation file. Also requires your dataset to be setup in the
+    following format.
 
     root_dir
       |- images

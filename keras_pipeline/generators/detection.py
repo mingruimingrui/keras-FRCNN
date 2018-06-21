@@ -361,6 +361,7 @@ class DetectionGenerator(object):
 
             # Perform resizing
             scaled_image, image_scale = self.resize_image(orig_image)
+            scaled_annotations = orig_annotations.copy()
             scaled_annotations[:, :4] *= image_scale
 
             # Recompile into group from

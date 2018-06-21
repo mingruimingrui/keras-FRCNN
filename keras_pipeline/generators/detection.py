@@ -95,6 +95,11 @@ class DetectionGenerator(object):
         # ill adviced due to to their sometimes unpickable nature
         # The DetectionDataset object is picklable
         self.data            = config.dataset
+        self.size            = config.dataset.get_size()
+        self.num_classes     = config.dataset.get_num_object_classes()
+        self.label_to_name   = config.dataset.object_class_id_to_object_class
+
+        # Typical generator config
         self.batch_size      = config.batch_size
         self.image_min_side  = config.image_min_side
         self.image_max_side  = config.image_max_side
@@ -127,7 +132,7 @@ class DetectionGenerator(object):
         self.group_index_generator = self._make_index_generator(len(self.groups))
 
     ###########################################################################
-    #### The compute anchors function
+    #### Detection Specific functions
 
     def compute_anchors(self, image_shape):
         return compute_all_anchors(
@@ -244,7 +249,7 @@ class DetectionGenerator(object):
             labels_group[index], annotations, anchors = anchor_targets_bbox(
                 max_shape,
                 annotations,
-                self.data.get_num_object_classes(),
+                self.data.num_classes,
                 mask_shape = image.shape,
                 compute_anchors = self.compute_anchors
             )
@@ -307,7 +312,7 @@ class DetectionGenerator(object):
         return self._get_batches_of_transformed_samples(group)
 
     def __len__(self):
-        return self.data.get_size()
+        return self.data.size
 
     def __next__(self):
         return self.next()
@@ -326,7 +331,8 @@ class DetectionGenerator(object):
     #### This marks the start of all evaluation only methods
 
     def create_eval_generator(self):
-        """ Creates an evaluation set generator
+        """ Creates an optimized evaluation set generator
+        At present evaluation is working only at batch sizes of 1
 
         Generator would return original images and annotations along with network inputs and targets.
         All images and annotations are scaled down to previously defined size ranges.
@@ -354,20 +360,17 @@ class DetectionGenerator(object):
             orig_annotations = annotations_group[0]
 
             # Perform resizing
-            orig_image, image_scale = self.resize_image(orig_image)
-            orig_annotations[:, :4] *= image_scale
+            scaled_image, image_scale = self.resize_image(orig_image)
+            scaled_annotations[:, :4] *= image_scale
 
             # Recompile into group from
-            image_group = [orig_image]
-            annotations_group = [orig_annotations]
+            image_group = [scaled_image]
+            annotations_group = [scaled_annotations]
 
             # Compuate network inputs
             inputs = self.compute_inputs(image_group)
 
-            # Compute network targets
-            targets = self.compute_targets(image_group, annotations_group)
-
             # Increase counter
             i += 1
 
-            yield inputs, targets + [orig_annotations, image_scale]
+            yield [inputs, orig_image], [orig_annotations, image_scale]

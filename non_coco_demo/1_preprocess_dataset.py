@@ -1,5 +1,5 @@
 """ Script used to process the kitti dataset annotations into one that is accepted by pycocotools
-The objective here is to arrange into the format required by keras_pipeline.datasets.coco.CocoDataset
+The objective here is to arrange into the format required by keras_pipeline.datasets.coco.DetectionDataset
 
 Please first arrange your kitti dataset in this order under your kitti root directory
 

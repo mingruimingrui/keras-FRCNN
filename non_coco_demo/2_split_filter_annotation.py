@@ -6,7 +6,6 @@ import sys
 import random
 import json
 import argparse
-from tqdm import tqdm
 
 
 def save_dataset(kitti_path, dataset, file_name):

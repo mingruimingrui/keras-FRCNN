@@ -2,9 +2,7 @@ from __future__ import division
 
 import os
 import struct
-import collections
 
-import keras
 import numpy as np
 from PIL import Image
 
@@ -13,8 +11,9 @@ def read_image(path):
     return np.asarray(Image.open(path).convert('RGB'))
 
 
-""" Following section is taken directly from
-https://github.com/scardine/image_size/blob/master/get_image_size.py """
+###############################################################################
+#### Following section is taken directly from
+#### https://github.com/scardine/image_size/blob/master/get_image_size.py
 
 
 class UnknownImageFormat(Exception):
@@ -23,8 +22,8 @@ class UnknownImageFormat(Exception):
 
 def get_image_size(file_path):
     """
-    Return an `Image` object for a given img file content - no external
-    dependencies except the os and struct builtin modules
+    Efficiently determine the dimensions of a given image
+
     Args:
         file_path (str): path to an image file
     Returns:
@@ -41,26 +40,22 @@ def get_image_size(file_path):
 
         if (size >= 10) and data[:6] in (b'GIF87a', b'GIF89a'):
             # GIFs
-            imgtype = 'GIF'
             w, h = struct.unpack("<HH", data[6:10])
             width = int(w)
             height = int(h)
         elif ((size >= 24) and data.startswith(b'\211PNG\r\n\032\n')
               and (data[12:16] == b'IHDR')):
             # PNGs
-            imgtype = 'PNG'
             w, h = struct.unpack(">LL", data[16:24])
             width = int(w)
             height = int(h)
         elif (size >= 16) and data.startswith(b'\211PNG\r\n\032\n'):
             # older PNGs
-            imgtype = 'PNG'
             w, h = struct.unpack(">LL", data[8:16])
             width = int(w)
             height = int(h)
         elif (size >= 2) and data.startswith(b'\377\330'):
             # JPEG
-            imgtype = 'JPEG'
             input.seek(0)
             input.read(2)
             b = input.read(1)
@@ -88,7 +83,6 @@ def get_image_size(file_path):
                 raise UnknownImageFormat(e.__class__.__name__ + msg)
         elif (size >= 26) and data.startswith(b'BM'):
             # BMP
-            imgtype = 'BMP'
             headersize = struct.unpack("<I", data[14:18])[0]
             if headersize == 12:
                 w, h = struct.unpack("<HH", data[18:22])
@@ -107,7 +101,6 @@ def get_image_size(file_path):
             # Standard TIFF, big- or little-endian
             # BigTIFF and other different but TIFF-like formats are not
             # supported currently
-            imgtype = 'TIFF'
             byteOrder = data[:2]
             boChar = ">" if byteOrder == "MM" else "<"
             # maps TIFF type id to size (in bytes)
@@ -163,8 +156,7 @@ def get_image_size(file_path):
             except Exception as e:
                 raise UnknownImageFormat(str(e))
         elif size >= 2:
-                # see http://en.wikipedia.org/wiki/ICO_(file_format)
-            imgtype = 'ICO'
+            # see http://en.wikipedia.org/wiki/ICO_(file_format)
             input.seek(0)
             reserved = input.read(2)
             if 0 != struct.unpack("<H", reserved)[0]:

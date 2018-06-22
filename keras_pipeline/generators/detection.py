@@ -19,7 +19,7 @@ from ..utils.anchors import (
 from ..preprocessing.image_transform import (
     adjust_transform_for_image,
     apply_transform,
-    resize_image
+    resize_image_1
 )
 
 from ..preprocessing.transform import (
@@ -201,7 +201,7 @@ class DetectionGenerator(object):
         return image, annotations
 
     def resize_image(self, image):
-        return resize_image(image, min_side=self.image_min_side, max_side=self.image_max_side)
+        return resize_image_1(image, min_side=self.image_min_side, max_side=self.image_max_side)
 
     def preprocess_entry(self, image, annotations):
         # Apply transformation
@@ -249,7 +249,7 @@ class DetectionGenerator(object):
             labels_group[index], annotations, anchors = anchor_targets_bbox(
                 max_shape,
                 annotations,
-                self.data.num_classes,
+                self.num_classes,
                 mask_shape = image.shape,
                 compute_anchors = self.compute_anchors
             )

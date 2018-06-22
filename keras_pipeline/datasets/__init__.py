@@ -1,1 +1,2 @@
 from .detection import DetectionDataset
+from .image_classification import ImageClassificationDataset

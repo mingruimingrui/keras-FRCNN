@@ -1,15 +1,15 @@
 import os
 import numpy as np
-from PIL import Image
 
 from pycocotools.coco import COCO
 from ._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image import read_image
 
 class ImageClassificationDataset(ImageDatasetTemplate):
-    """ API meant to be used by generators.ImageClassificationGenerator
-    Requires your dataset to be setup in the following format and your annotation
-    file to follow COCO like convention
+    """ Dataset API meant to be used by generators.ImageClassificationGenerator
+    Leverages off pycocotools, you will have to provide an appropriate
+    annotation file. Also requires your dataset to be setup in the
+    following format.
 
     root_dir
       |- images
@@ -42,17 +42,17 @@ class ImageClassificationDataset(ImageDatasetTemplate):
         # Retrieve image class information
         # Here image_classes_id  is like id to class_name
         #      image_classes     is like class_name to id
-        # It is also important that id number starts from 0 and ends at num_image_classes
+        # It is also important that id number starts from 0 and ends at num_object_classes
         coco_id_to_id         = {}
         self.image_classes_id = {}
         self.image_classes    = {}
         for id, class_info in enumerate(coco.cats.values()):
             coco_id_to_id[class_info['id']] = id
             class_info['id'] = id
-            self.image_classes_id [id]             = class_info
+            self.image_classes_id[id]              = class_info
             self.image_classes[class_info['name']] = class_info
 
-        # Append useful image informations such as aspect_ratio
+        # Store image information which contains the image paths as well as crop boxes
         self.image_infos = coco.imgs
         for image_index in coco.getImgIds():
             # Retrieve image specific information
@@ -66,12 +66,40 @@ class ImageClassificationDataset(ImageDatasetTemplate):
                 image_info['file_name']
             )
 
-            # Edit and store category_ids
-            import pdb; pdb.set_trace()
-            # DEBUG
-
             # Calculate aspect_ratio
             image_info['aspect_ratio'] = image_info['width'] / image_info['height']
 
             # Update in self.image_infos
             self.image_infos[image_index] = image_info
+
+
+    def list_image_index(self):
+        return list(self.image_infos.keys())
+
+    def get_size(self):
+        return len(self.image_infos)
+
+    def get_image_aspect_ratio(self, image_index):
+        return self.image_infos[image_index]['aspect_ratio']
+
+    def get_num_image_classes(self):
+        return len(self.image_classes)
+
+    def load_image(self, image_index):
+        file_path = self.image_infos[image_index]['file_path']
+        return read_image(file_path)
+
+    def load_image_info(self, image_index):
+        return self.image_infos[image_index]
+
+    def load_image_class_array(self, image_index):
+        category_ids = self.load_image_info(image_index)['category_ids']
+        if not isinstance(category_ids, list):
+            category_ids = [category_ids]
+        return np.array(category_ids)
+
+    def image_class_to_label(self, name):
+        return self.image_classes[name]['id']
+
+    def label_to_image_class(self, label):
+        return self.image_classes_id[label]['name']

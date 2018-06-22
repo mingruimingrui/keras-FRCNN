@@ -25,6 +25,7 @@ IMAGE_SETS = ['train2017', 'val2017']
 
 
 def save_dataset(dataset, img_set, args):
+    print('Saving dataset to file')
     with open(os.path.join(
         args.coco_path,
         'annotations',
@@ -63,7 +64,7 @@ def create_classification_dataset(dataset, img_set):
     # Store all info and store as the classification dataset
     class_dataset = {
         'categories': dataset['categories'],
-        'images': img_info
+        'images': class_imgs
     }
 
     return class_dataset
@@ -96,6 +97,7 @@ def main():
         save_dataset(class_dataset, img_set, args)
 
     print('Preprocessing done')
+
 
 if __name__ == '__main__':
     main()

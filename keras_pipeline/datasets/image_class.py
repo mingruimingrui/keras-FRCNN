@@ -5,8 +5,8 @@ from pycocotools.coco import COCO
 from ._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image import read_image
 
-class ImageClassificationDataset(ImageDatasetTemplate):
-    """ Dataset API meant to be used by generators.ImageClassificationGenerator
+class ImageClassDataset(ImageDatasetTemplate):
+    """ Dataset API meant to be used by generators.ImageClassGenerator
     Leverages off pycocotools, you will have to provide an appropriate
     annotation file. Also requires your dataset to be setup in the
     following format.

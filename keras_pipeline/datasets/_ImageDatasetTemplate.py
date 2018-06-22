@@ -59,13 +59,11 @@ class ImageDatasetTemplate:
         """
         raise NotImplementedError('load_image_class_array method not implemented')
 
-    def image_class_to_label(self, name):
-        # label is like an index needs to range from 0 to num_class
-        raise NotImplementedError('image_class_to_label method not implemented')
+    def image_class_to_image_class_id(self, name):
+        raise NotImplementedError('image_class_to_image_class_id method not implemented')
 
-    def label_to_image_class(self, label):
-        # label is like an index needs to range from 0 to num_class
-        raise NotImplementedError('label_to_image_class method not implemented')
+    def image_class_id_to_image_class(self, id):
+        raise NotImplementedError('image_class_id_to_image_class method not implemented')
 
 
     """ Reqruired Object detection/segmentation specific functions """

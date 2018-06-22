@@ -98,8 +98,8 @@ class ImageClassDataset(ImageDatasetTemplate):
             category_ids = [category_ids]
         return np.array(category_ids)
 
-    def image_class_to_label(self, name):
+    def image_class_to_image_class_id(self, name):
         return self.image_classes[name]['id']
 
-    def label_to_image_class(self, label):
-        return self.image_classes_id[label]['name']
+    def image_class_id_to_image_class(self, id):
+        return self.image_classes_id[id]['name']

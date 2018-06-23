@@ -54,7 +54,7 @@ def create_classification_dataset(dataset, img_set):
         # Change id, append bbox and category_id
         img_info['id']           = ann['id']
         img_info['category_ids'] = ann['category_id']
-        img_info['bboxes']       = ann['bbox']
+        img_info['bbox']         = ann['bbox']
 
         # Store into classification image list
         class_imgs.append(img_info)

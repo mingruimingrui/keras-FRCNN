@@ -21,9 +21,8 @@ class ImageClassGeneratorConfig(ConfigTemplate):
 
         self.add(
             'batch_size',
-            'Number of images to be processed in parallel during training recommended 1 for ' + \
-            'detection due to the high memory cost',
-            default = 1,
+            'Number of images to be processed in parallel during training',
+            default = 64,
             accepted_types = 'int-like'
         )
 
@@ -58,17 +57,10 @@ class ImageClassGeneratorConfig(ConfigTemplate):
         )
 
         self.add(
-            'shuffle_groups',
-            'Shuffle the group order',
+            'shuffle',
+            'Shuffle the image order',
             default = False,
             accepted_types = bool
-        )
-
-        self.add(
-            'group_method',
-            'Order to group images recommended ratio to reduce blacked out areas of images',
-            default = 'ratio',
-            valid_options = [None, 'random', 'ratio']
         )
 
         # Transform Parameters

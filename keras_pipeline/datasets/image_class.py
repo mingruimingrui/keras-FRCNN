@@ -85,12 +85,15 @@ class ImageClassDataset(ImageDatasetTemplate):
     def get_num_image_classes(self):
         return len(self.image_classes)
 
+    def load_image_info(self, image_index):
+        return self.image_infos[image_index]
+
     def load_image(self, image_index):
         file_path = self.image_infos[image_index]['file_path']
         return read_image(file_path)
 
-    def load_image_info(self, image_index):
-        return self.image_infos[image_index]
+    def load_image_bbox_array(self, image_index):
+        return np.array(self.image_infos[image_index]['bbox'])
 
     def load_image_class_array(self, image_index):
         category_ids = self.load_image_info(image_index)['category_ids']

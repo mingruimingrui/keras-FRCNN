@@ -109,3 +109,7 @@ snapshot
 
 # Debug scripts
 debug*
+
+# Temp scripts
+temp*
+tmp*

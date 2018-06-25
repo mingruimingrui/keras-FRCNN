@@ -19,7 +19,7 @@ from ..utils.anchors import (
 from ..preprocessing.image_transform import (
     adjust_transform_for_image,
     apply_transform,
-    resize_image
+    resize_image_1
 )
 
 from ..preprocessing.transform import (
@@ -33,10 +33,9 @@ from ..preprocessing.transform import (
     2. won't be called (or have the potential to be called) after __init__ is done
 """
 
-def _group_image_ids(img_ids, batch_size, group_method, dataset):
+def _group_image_ids(dataset, batch_size, group_method, shuffle):
     """ Group img_ids according to batch_size and group_method """
-    # Make copy of ids, we're going to order them later
-    img_ids = img_ids[:]
+    img_ids = dataset.list_image_index()
 
     if group_method == 'random':
         random.shuffle(img_ids)
@@ -50,6 +49,9 @@ def _group_image_ids(img_ids, batch_size, group_method, dataset):
         start = batch_size * group_i
         end   = batch_size * (group_i + 1)
         groups.append(img_ids[start:end])
+
+    if shuffle:
+        random.shuffle(groups)
 
     return groups
 
@@ -95,6 +97,11 @@ class DetectionGenerator(object):
         # ill adviced due to to their sometimes unpickable nature
         # The DetectionDataset object is picklable
         self.data            = config.dataset
+        self.size            = config.dataset.get_size()
+        self.num_classes     = config.dataset.get_num_object_classes()
+        self.label_to_name   = config.dataset.label_to_name
+
+        # Typical generator config
         self.batch_size      = config.batch_size
         self.image_min_side  = config.image_min_side
         self.image_max_side  = config.image_max_side
@@ -110,10 +117,10 @@ class DetectionGenerator(object):
 
         # Define groups (1 group ==  1 batch)
         self.groups = _group_image_ids(
-            config.dataset.list_image_index(),
+            config.dataset,
             config.batch_size,
             config.group_method,
-            config.dataset
+            config.shuffle_groups
         )
 
         # Create transform generator
@@ -124,10 +131,10 @@ class DetectionGenerator(object):
 
         # Create the tools which helps define the order in which the
         self.lock = threading.Lock() # this is to allow for parrallel batch processing
-        self.group_index_generator = self._make_index_generator(len(self.groups))
+        self.group_index_generator = self._make_index_generator()
 
     ###########################################################################
-    #### The compute anchors function
+    #### Detection Specific functions
 
     def compute_anchors(self, image_shape):
         return compute_all_anchors(
@@ -196,7 +203,7 @@ class DetectionGenerator(object):
         return image, annotations
 
     def resize_image(self, image):
-        return resize_image(image, min_side=self.image_min_side, max_side=self.image_max_side)
+        return resize_image_1(image, min_side=self.image_min_side, max_side=self.image_max_side)
 
     def preprocess_entry(self, image, annotations):
         # Apply transformation
@@ -244,7 +251,7 @@ class DetectionGenerator(object):
             labels_group[index], annotations, anchors = anchor_targets_bbox(
                 max_shape,
                 annotations,
-                self.data.get_num_object_classes(),
+                self.num_classes,
                 mask_shape = image.shape,
                 compute_anchors = self.compute_anchors
             )
@@ -286,9 +293,10 @@ class DetectionGenerator(object):
 
         return inputs, targets
 
-    def _make_index_generator(self, num_groups):
+    def _make_index_generator(self):
         """ Returns a generator which yields group index to train the model in """
         # start group_index at -1 so that first group_index returned is 0
+        num_groups = len(self.groups)
         group_index = -1
         reset_point = num_groups - 1
 
@@ -296,7 +304,8 @@ class DetectionGenerator(object):
             if group_index < reset_point:
                 group_index += 1
             else:
-                random.shuffle(self.groups)
+                if self.shuffle:
+                    random.shuffle(self.groups)
                 group_index = 0
             yield group_index
 
@@ -307,7 +316,7 @@ class DetectionGenerator(object):
         return self._get_batches_of_transformed_samples(group)
 
     def __len__(self):
-        return self.data.get_size()
+        return self.size
 
     def __next__(self):
         return self.next()
@@ -326,13 +335,13 @@ class DetectionGenerator(object):
     #### This marks the start of all evaluation only methods
 
     def create_eval_generator(self):
-        """ Creates an evaluation set generator
+        """ Creates an optimized evaluation set generator
+        At present evaluation is working only at batch sizes of 1
 
-        Generator would return original images and annotations along with network inputs and targets.
-        All images and annotations are scaled down to previously defined size ranges.
+        Generator would return original images and annotations along with network inputs.
 
         Generator generates items in the following format
-        [network_inputs, orig_image], [classification_targets, regression_targets, orig_annotations, image_scale]
+        [network_inputs, orig_image], [orig_annotations, image_scale]
         """
 
         img_ids = self.data.list_image_index()
@@ -354,20 +363,18 @@ class DetectionGenerator(object):
             orig_annotations = annotations_group[0]
 
             # Perform resizing
-            orig_image, image_scale = self.resize_image(orig_image)
-            orig_annotations[:, :4] *= image_scale
+            scaled_image, image_scale = self.resize_image(orig_image)
+            scaled_annotations = orig_annotations.copy()
+            scaled_annotations[:, :4] *= image_scale
 
             # Recompile into group from
-            image_group = [orig_image]
-            annotations_group = [orig_annotations]
+            image_group = [scaled_image]
+            annotations_group = [scaled_annotations]
 
             # Compuate network inputs
             inputs = self.compute_inputs(image_group)
 
-            # Compute network targets
-            targets = self.compute_targets(image_group, annotations_group)
-
             # Increase counter
             i += 1
 
-            yield inputs, targets + [orig_annotations, image_scale]
+            yield [inputs, orig_image], [orig_annotations, image_scale]

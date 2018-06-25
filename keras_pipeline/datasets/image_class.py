@@ -5,8 +5,8 @@ from pycocotools.coco import COCO
 from ._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image import read_image
 
-class DetectionDataset(ImageDatasetTemplate):
-    """ Dataset API meant to be used by generators.DetectionGenerator
+class ImageClassDataset(ImageDatasetTemplate):
+    """ Dataset API meant to be used by generators.ImageClassGenerator
     Leverages off pycocotools, you will have to provide an appropriate
     annotation file. Also requires your dataset to be setup in the
     following format.
@@ -39,20 +39,20 @@ class DetectionDataset(ImageDatasetTemplate):
         )
         coco = COCO(annotation_file)
 
-        # Retrieve object class information
-        # Here object_classes_id  is like id to class_name
-        #      object_classes     is like class_name to id
+        # Retrieve image class information
+        # Here image_classes_id  is like id to class_name
+        #      image_classes     is like class_name to id
         # It is also important that id number starts from 0 and ends at num_object_classes
-        coco_id_to_id          = {}
-        self.object_classes_id = {}
-        self.object_classes    = {}
+        coco_id_to_id         = {}
+        self.image_classes_id = {}
+        self.image_classes    = {}
         for id, class_info in enumerate(coco.cats.values()):
             coco_id_to_id[class_info['id']] = id
             class_info['id'] = id
-            self.object_classes_id [id]             = class_info
-            self.object_classes[class_info['name']] = class_info
+            self.image_classes_id[id]              = class_info
+            self.image_classes[class_info['name']] = class_info
 
-        # Store image information which also includes the associated annotations
+        # Store image information which contains the image paths as well as crop boxes
         self.image_infos = coco.imgs
         for image_index in coco.getImgIds():
             # Retrieve image specific information
@@ -65,13 +65,6 @@ class DetectionDataset(ImageDatasetTemplate):
                 self.set_name,
                 image_info['file_name']
             )
-
-            # Edit and store annotations
-            image_annotations = coco.imgToAnns[image_index]
-            for i in range(len(image_annotations)):
-                coco_id = image_annotations[i]['category_id']
-                image_annotations[i]['category_id'] = coco_id_to_id[coco_id]
-            image_info['annotations'] = image_annotations
 
             # Calculate aspect_ratio
             image_info['aspect_ratio'] = image_info['width'] / image_info['height']
@@ -89,30 +82,27 @@ class DetectionDataset(ImageDatasetTemplate):
     def get_image_aspect_ratio(self, image_index):
         return self.image_infos[image_index]['aspect_ratio']
 
-    def get_num_object_classes(self):
-        return len(self.object_classes)
+    def get_num_image_classes(self):
+        return len(self.image_classes)
+
+    def load_image_info(self, image_index):
+        return self.image_infos[image_index]
 
     def load_image(self, image_index):
         file_path = self.image_infos[image_index]['file_path']
         return read_image(file_path)
 
-    def load_image_info(self, image_index):
-        return self.image_infos[image_index]
+    def load_image_bbox_array(self, image_index):
+        return np.array(self.image_infos[image_index]['bbox'])
 
-    def load_annotations(self, image_index):
-        annotations = self.image_infos[image_index]['annotations']
-        # some annotations have no width or height, skip them
-        return [ann for ann in annotations if (ann['bbox'][2] >= 1) and (ann['bbox'][3] >= 1)]
-
-    def load_annotations_array(self, image_index):
-        annotations = self.load_annotations(image_index)
-        if len(annotations) > 0:
-            return np.array([ann['bbox'] + [ann['category_id']] for ann in annotations])
-        else:
-            return np.zeros((0, 5))
+    def load_image_class_array(self, image_index):
+        category_ids = self.load_image_info(image_index)['category_ids']
+        if not isinstance(category_ids, list):
+            category_ids = [category_ids]
+        return np.array(category_ids)
 
     def name_to_label(self, name):
-        return self.object_classes[name]['id']
+        return self.image_classes[name]['id']
 
     def label_to_name(self, id):
-        return self.object_classes_id[id]['name']
+        return self.image_classes_id[id]['name']

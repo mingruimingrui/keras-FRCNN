@@ -42,30 +42,31 @@ class ImageDatasetTemplate:
 
     def load_image_info(self, image_index):
         """ If this is a classification task this needs to have the following attributes
-        category_id : corresponding to the image class labels
-                      (though this is mainly to help implement load_image_class_array)
+        category_ids : corresponding to the image class labels
+                       (though this is mainly to help implement load_image_class_array)
         """
         raise NotImplementedError('load_image_info method not implemented')
 
+    def name_to_label(self, name):
+        raise NotImplementedError('name_to_label method not implemented')
 
-    """ Image Classification specific required functions """
+    def label_to_name(self, id):
+        raise NotImplementedError('label_to_name method not implemented')
+
+
+    """ Required Image Classification functions """
     def get_num_image_classes(self):
         raise NotImplementedError('get_num_image_classes method not implemented')
 
     def load_image_class_array(self, image_index):
+        """ Returns the iamge classes in an array form
+        with be a (-1,) shaped array with the length being the number of classes
+        associated to the image_index
+        """
         raise NotImplementedError('load_image_class_array method not implemented')
 
-    # These are not necessary but good to have
-    # def image_class_to_label(self, name):
-    #     # label is like an index needs to range from 0 to num_class
-    #     raise NotImplementedError('image_class_to_label method not implemented')
-    #
-    # def label_to_image_class(self, label):
-    #     # label is like an index needs to range from 0 to num_class
-    #     raise NotImplementedError('label_to_image_class method not implemented')
 
-
-    """ Object detection/segmentation specific required functions """
+    """ Reqruired Object detection/segmentation specific functions """
     def get_num_object_classes(self):
         raise NotImplementedError('get_num_object_classes method not implemented')
 
@@ -83,10 +84,3 @@ class ImageDatasetTemplate:
         for each annote, the order should be [x, y, w, h, object_class]
         """
         raise NotImplementedError('load_annotations_array method not implemented')
-
-    # These are not necessary but good to have
-    # def object_class_to_object_class_id(self, name):
-    #     raise NotImplementedError('object_class_to_object_class_id method not implemented')
-    #
-    # def object_class_id_to_object_class(self, id):
-    #     raise NotImplementedError('object_class_id_to_object_class method not implemented')

@@ -99,7 +99,7 @@ class DetectionGenerator(object):
         self.data            = config.dataset
         self.size            = config.dataset.get_size()
         self.num_classes     = config.dataset.get_num_object_classes()
-        self.label_to_name   = config.dataset.object_class_id_to_object_class
+        self.label_to_name   = config.dataset.label_to_name
 
         # Typical generator config
         self.batch_size      = config.batch_size
@@ -316,7 +316,7 @@ class DetectionGenerator(object):
         return self._get_batches_of_transformed_samples(group)
 
     def __len__(self):
-        return self.data.size
+        return self.size
 
     def __next__(self):
         return self.next()

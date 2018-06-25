@@ -47,6 +47,12 @@ class ImageDatasetTemplate:
         """
         raise NotImplementedError('load_image_info method not implemented')
 
+    def name_to_label(self, name):
+        raise NotImplementedError('name_to_label method not implemented')
+
+    def label_to_name(self, id):
+        raise NotImplementedError('label_to_name method not implemented')
+
 
     """ Required Image Classification functions """
     def get_num_image_classes(self):
@@ -58,12 +64,6 @@ class ImageDatasetTemplate:
         associated to the image_index
         """
         raise NotImplementedError('load_image_class_array method not implemented')
-
-    def image_class_to_image_class_id(self, name):
-        raise NotImplementedError('image_class_to_image_class_id method not implemented')
-
-    def image_class_id_to_image_class(self, id):
-        raise NotImplementedError('image_class_id_to_image_class method not implemented')
 
 
     """ Reqruired Object detection/segmentation specific functions """
@@ -84,9 +84,3 @@ class ImageDatasetTemplate:
         for each annote, the order should be [x, y, w, h, object_class]
         """
         raise NotImplementedError('load_annotations_array method not implemented')
-
-    def object_class_to_object_class_id(self, name):
-        raise NotImplementedError('object_class_to_object_class_id method not implemented')
-
-    def object_class_id_to_object_class(self, id):
-        raise NotImplementedError('object_class_id_to_object_class method not implemented')

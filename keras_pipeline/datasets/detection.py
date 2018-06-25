@@ -111,8 +111,8 @@ class DetectionDataset(ImageDatasetTemplate):
         else:
             return np.zeros((0, 5))
 
-    def object_class_to_object_class_id(self, name):
+    def name_to_label(self, name):
         return self.object_classes[name]['id']
 
-    def object_class_id_to_object_class(self, id):
+    def label_to_name(self, id):
         return self.object_classes_id[id]['name']

@@ -25,10 +25,12 @@ class COCO:
         self.cats = {cat['id']: cat for cat in self.dataset['categories']}
         self.imgs = {img['id']: img for img in self.dataset['images']}
         self.anns = dict()
-        if 'anns' in self.dataset:
+        if 'annotations' in self.dataset:
             self.anns = {ann['id']: ann for ann in self.dataset['annotations']}
 
-        self.catToImgs = {cat_id: [] for cat_id in range(max(self.cats.keys()))}
+        min_cat_id = min(self.cats.keys())
+        max_cat_id = max(self.cats.keys())
+        self.catToImgs = {cat_id: [] for cat_id in range(min_cat_id, max_cat_id + 1)}
         self.imgToAnns = {img_id: [] for img_id in self.imgs.keys()}
         for ann in self.anns.values():
             self.catToImgs[ann['category_id']].append(ann['image_id'])

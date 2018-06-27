@@ -34,6 +34,7 @@ def transform_xy(transform, xy):
 
 def transform_aabb(transform, aabb):
     """ Apply a transformation to an axis aligned bounding box.
+    This method is generally more efficient than transform_xy.
 
     The result is a new AABB in the same coordinate system as the original AABB.
     The new AABB contains all corner points of the original AABB after applying the given transformation.
@@ -45,7 +46,7 @@ def transform_aabb(transform, aabb):
         The new AABB as tuple (x1, y1, x2, y2)
     """
     x1, y1, x2, y2 = aabb
-    # Transform all 4 corners of the AABB this method is generally more efficient than transform_xy
+    # Transform all 4 corners of the AABB
     points = transform.dot([
         [x1, x2, x1, x2],
         [y1, y2, y2, y1],

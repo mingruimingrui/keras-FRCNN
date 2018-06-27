@@ -8,6 +8,30 @@ def colvec(*args):
     return np.array([args]).T
 
 
+def transform_xy(transform, xy):
+    """ Apply a transformation to a set of points.
+
+    The inputs should be a set of points in the format [(x1, y1), (x2, y2), ...]
+    The result is the transformed set of points of the same shape as the input.
+
+    # Arguments
+        transform: The transformation to apply.
+        xy       : A set of points in the implied shape of (n, 2)
+    # Returns
+        The new XY as tuple
+    """
+    # Get number of points store as n
+    n = len(xy)
+
+    # _xy is the transformed xy in inplied 3d vector form
+    _xy = np.hstack([xy, np.ones([n,1])])
+
+    # Apply transformation to all points
+    points = transform.dot(_xy.T)
+
+    return points[:2].T
+
+
 def transform_aabb(transform, aabb):
     """ Apply a transformation to an axis aligned bounding box.
 
@@ -16,15 +40,12 @@ def transform_aabb(transform, aabb):
 
     # Arguments
         transform: The transformation to apply.
-        x1:        The minimum X value of the AABB.
-        y1:        The minimum y value of the AABB.
-        x2:        The maximum X value of the AABB.
-        y2:        The maximum y value of the AABB.
+        aabb     : The bounding box points in the format (x1, y1, x2, y2).
     # Returns
         The new AABB as tuple (x1, y1, x2, y2)
     """
     x1, y1, x2, y2 = aabb
-    # Transform all 4 corners of the AABB.
+    # Transform all 4 corners of the AABB this method is generally more efficient than transform_xy
     points = transform.dot([
         [x1, x2, x1, x2],
         [y1, y2, y2, y1],

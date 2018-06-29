@@ -66,7 +66,7 @@ def _get_annotations_and_detections(
     if max_images is None:
         num_images = len(generator)
     else:
-        num_images = max(max_images, len(generator))
+        num_images = min(max_images, len(generator))
 
     # Create blob to store annotations and detections
     all_annotations = [[None for label in range(generator.num_classes)] for i in range(num_images)]
@@ -76,7 +76,7 @@ def _get_annotations_and_detections(
     eval_generator = generator.create_eval_generator()
 
     for i in range(num_images):
-        (image_input, image), (annotations, image_scale) = eval_generator.next()
+        (image_input, image), (annotations, image_scale) = next(eval_generator)
 
         # Perform predictions
         boxes, scores, labels = model.predict(image_input)

@@ -76,7 +76,6 @@ def _get_annotations_and_detections(
     eval_generator = generator.create_eval_generator()
 
     for i in range(num_images):
-        # (image_input, image), (annotations, image_scale) = eval_generator.next()
         (image_input, image), (annotations, image_scale) = next(eval_generator)
 
         # Perform predictions

@@ -111,7 +111,7 @@ def main():
     # Load model
     print('\n==== Loading Model ====')
     print('This can take a while...')
-    model_config = RetinaNetConfig(num_classes = train_set.get_num_object_classes())
+    model_config = RetinaNetConfig(num_classes = validation_set.get_num_object_classes())
     model = load_prediction_model(model_config, args)
     print('Model created, now saving')
     save_prediction_model(model, args)

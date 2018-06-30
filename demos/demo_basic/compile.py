@@ -90,7 +90,7 @@ def parse_args(args):
         type=str)
     parser.add_argument('--save-dir',
         help='Save path for compiled prediction model',
-        default='./prediction_model')
+        default='./prediction_model.h5')
     parser.add_argument('--save-name',
         help='Name of saved prediction model',
         default='retinanet_resnet50_coco_pred.h5')

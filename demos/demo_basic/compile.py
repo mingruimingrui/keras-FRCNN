@@ -20,6 +20,9 @@ from keras_pipeline.models import (
 from keras_pipeline.datasets import DetectionDataset
 from keras_pipeline.generators import DetectionGeneratorConfig, DetectionGenerator
 
+# Evaluation
+from keras_pipeline.utils.eval import evaluate_detection
+
 
 def makedirs(path):
     if not os.path.isdir(path):

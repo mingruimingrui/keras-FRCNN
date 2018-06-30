@@ -64,6 +64,8 @@ def load_prediction_model(model_config, args):
     training_model = LoadRetinaNet(args.snapshot, model_config.backbone_name)
     prediction_model = RetinaNetFromTrain(training_model, model_config)
 
+    return prediction_model
+
 
 def load_validation_set(args):
     # Load dataset information

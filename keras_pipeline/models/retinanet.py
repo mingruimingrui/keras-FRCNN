@@ -201,6 +201,21 @@ def __build_pyramid_features(C3, C4, C5, feature_size=256):
     return P3, P4, P5, P6, P7
 
 
+def __compile_retina_net(model, config):
+    """ Compiles a training retinanet model """
+    # classification_loss =
+    # regression_loss =
+    optimizer = getattr(keras.optimizers, config.optimizer_name)(**config.optimizer_options)
+
+    training_model.compile(
+        loss = {
+            'classification': config.classification_loss,
+            'regression'    : config.regression_loss
+        },
+        optimizer = optimizer
+    )
+
+
 def RetinaNetTrain(config):
     """ Build a retinanet model with initial weights for training
 
@@ -249,13 +264,7 @@ def RetinaNetTrain(config):
         name    = config.name
     )
 
-    training_model.compile(
-        loss = {
-            'classification': config.classification_loss,
-            'regression'    : config.regression_loss
-        },
-        optimizer = config.optimizer
-    )
+    __compile_retina_net(training_model, config)
 
     return training_model
 

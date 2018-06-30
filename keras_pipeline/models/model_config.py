@@ -65,10 +65,25 @@ class RetinaNetConfig(ConfigTemplate):
             default = losses.make_detection_smooth_l1_loss()
         )
 
+        # self.add(
+        #     'optimizer',
+        #     'A custom user defined optimizer, default Adam',
+        #     default = keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
+        # )
+
         self.add(
-            'optimizer',
-            'A custom user defined optimizer, default Adam',
-            default = keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
+            'optimizer_name',
+            'The name of a keras available optimizer from https://keras.io/optimizers/, default adam',
+            default = 'adam'
+        )
+
+        self.add(
+            'optimizer_options',
+            'Variable inputs for optimizers (in dict form), common inputs are lr, clipnorm, clipvalue, decay',
+            default = {
+                'lr': 1e-5,
+                'clipnorm': 0.001
+            }
         )
 
         # Backbone config

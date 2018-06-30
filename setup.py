@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='keras-pipeline',
-    version='0.1',
+    version='0.4',
     description='A collection of deep learning related models and tools written in keras and tensorflow',
     url='https://github.com/mingruimingrui/keras-pipeline',
     author='Wang Ming Rui',

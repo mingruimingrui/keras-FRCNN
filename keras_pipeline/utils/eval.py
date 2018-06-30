@@ -107,7 +107,7 @@ def _get_annotations_and_detections(
         ], axis=1)
 
         # Save detections if necessary
-        if save_path is not None:
+        if (save_path is not None) and (i < max_plots):
             image = image.copy()
             draw_annotations(image, annotations, label_to_name=generator.label_to_name)
             draw_detections(image, image_boxes, image_scores, image_labels,

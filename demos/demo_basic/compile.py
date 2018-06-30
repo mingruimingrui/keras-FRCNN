@@ -120,7 +120,7 @@ def main():
     print('Prediction model saved')
 
     # Exit if not evaluating
-    if not args.eval:
+    if not args.evaluation:
         return
 
     # Make the validation set generator

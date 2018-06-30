@@ -77,7 +77,7 @@ def _get_annotations_and_detections(
     eval_generator = generator.create_eval_generator()
 
     # Create progress bar
-    pbar = tqdm.tqdm(total=num_images, 'Applying model to images')
+    pbar = tqdm.tqdm(total=num_images, desc='Applying model to images')
 
     for i in range(num_images):
         pbar.update(1)

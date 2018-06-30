@@ -47,7 +47,7 @@ def make_generators(validation_set, model_config, args):
     validation_generator_config = DetectionGeneratorConfig(
         dataset = validation_set,
         model_config = model_config,
-        batch_size = args.batch_size
+        batch_size = 1
     )
 
     validation_generator = DetectionGenerator(validation_generator_config)

@@ -30,6 +30,7 @@ def makedirs(path):
 
 
 def eval_model(generator, model, args):
+    makedirs(args.eval_dir)
     APs = evaluate_detection(
         generator,
         model,

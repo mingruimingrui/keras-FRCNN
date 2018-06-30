@@ -76,7 +76,11 @@ def _get_annotations_and_detections(
     # Create eval_generator
     eval_generator = generator.create_eval_generator()
 
+    # Create progress bar
+    pbar = tqdm.tqdm(total=num_images, desc='Getting annotations and detections')
+
     for i in range(num_images):
+        pbar.update(1)
         (image_input, image), (annotations, image_scale) = next(eval_generator)
 
         # Perform predictions
@@ -115,8 +119,7 @@ def _get_annotations_and_detections(
             all_annotations[i][label] = annotations[annotations[:, 4] == label, :4].copy()
             all_detections[i][label]  = image_detections[image_detections[:, -1] == label, :-1].copy()
 
-        print('Getting annotations and detections {}/{}'.format(
-            i + 1, num_images), end='\r')
+    pbar.close()
 
     return all_annotations, all_detections
 

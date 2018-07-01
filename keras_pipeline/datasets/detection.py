@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from pycocotools.coco import COCO
+from .pycocotools import COCO
 from ._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image import read_image
 

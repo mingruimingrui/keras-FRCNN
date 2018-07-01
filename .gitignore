@@ -107,6 +107,9 @@ venv.bak/
 logs
 snapshot
 
+# input output
+images
+
 # Debug scripts
 debug*
 

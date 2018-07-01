@@ -10,7 +10,6 @@ from ..utils.validation import (
 
 from .backbone import load_backbone_pyramid_feautre_shapes_fn
 from ..utils import anchors as util_anchors
-from .. import losses
 
 
 class RetinaNetConfig(ConfigTemplate):
@@ -51,25 +50,16 @@ class RetinaNetConfig(ConfigTemplate):
         # Loss and optimizer config
 
         self.add(
-            'classification_loss',
-            'A classifier loss function for shape (None, None, 4), default focal_loss',
-            default = losses.make_detection_focal_loss()
+            'classification_loss_options',
+            'Kwarg inputs for classification loss (focal loss) in dict form',
+            default = {}
         )
 
         self.add(
-            'regression_loss',
-            'A regression loss function, default smooth_l1_loss '        + \
-            'Do note that the expected y_true shape is (None, None, 5) ' + \
-            'and expected y_pred shape is (None, None, 4). '              + \
-            'Last channel in y_true is to determine if anchor should be ignored',
-            default = losses.make_detection_smooth_l1_loss()
+            'regression_loss_options'
+            'Kwarg inputs for regression loss (smooth l1 loss) in dict form',
+            default = {}
         )
-
-        # self.add(
-        #     'optimizer',
-        #     'A custom user defined optimizer, default Adam',
-        #     default = keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
-        # )
 
         self.add(
             'optimizer_name',
@@ -79,7 +69,7 @@ class RetinaNetConfig(ConfigTemplate):
 
         self.add(
             'optimizer_options',
-            'Variable inputs for optimizers (in dict form), common inputs are lr, clipnorm, clipvalue, decay',
+            'Kwarg inputs for optimizers (in dict form), common inputs are lr, clipnorm, clipvalue, decay',
             default = {
                 'lr': 1e-5,
                 'clipnorm': 0.001

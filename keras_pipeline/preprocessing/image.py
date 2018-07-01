@@ -1,3 +1,5 @@
+""" Some utility functions for performing I/O of image files """
+
 from __future__ import division
 
 import os

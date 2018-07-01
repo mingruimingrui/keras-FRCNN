@@ -3,7 +3,7 @@ from collections import OrderedDict
 import keras
 
 from ..utils._config_template import ConfigTemplate
-from ..utils.validation import (
+from ..utils._validation import (
     is_valid_img_shape,
     is_valid_input_tensor
 )

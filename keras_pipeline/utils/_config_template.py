@@ -4,7 +4,7 @@ import textwrap
 from collections import OrderedDict
 
 from .collections import AttrDict
-from .validation import (
+from ._validation import (
     is_int_like,
     is_float_like,
     is_list_like

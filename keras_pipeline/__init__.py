@@ -13,8 +13,10 @@ from . import (
 
 # Eval
 from . import (
-    callbacks
+    callbacks,
+    evaluation
 )
+from .evaluation import inference
 
 # Utils
 from . import (

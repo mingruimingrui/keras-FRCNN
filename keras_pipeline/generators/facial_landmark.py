@@ -16,7 +16,10 @@ from ..preprocessing.image_transform import (
     resize_image_2
 )
 
-from ..preprocessing.transform import random_transform_generator
+from ..preprocessing.transform import (
+    random_transform_generator,
+    transform_xy
+)
 
 """ These functions written outside are those that
     1. does not reference self and
@@ -37,9 +40,26 @@ def _make_transform_generator(config):
         flip_y_chance   = config.flip_y_chance,
     )
 
+def _validate_dataset(dataset):
+    """ Validates that dataset is suitable for a detection task
+    This function doesn't really generate a proper Error functions but the error log should be enough for debugging purposes
+    """
+    img_id = dataset.list_image_index()[0]
+
+    dataset.get_size()
+    dataset.get_image_aspect_ratio(img_id)
+
+    dataset.load_image(img_id)
+    dataset.load_image_info(img_id)
+
+    dataset.load_image_bbox_array(img_id)
+    dataset.load_facial_landmark_array(img_id)
+
 
 class FacialLandmarkGenerator(object):
     def __init__(self, config):
+        _validate_dataset(config.dataset)
+
         # here dataset is the only object attribute
         # generally object and callable attributes in the generator is
         # ill adviced due to to their sometimes unpickable nature
@@ -83,7 +103,45 @@ class FacialLandmarkGenerator(object):
         labels will be in the form [n_points, 2] """
         return [self.data.load_facial_landmark_array(image_index) for image_index in group]
 
+    ###########################################################################
+    #### This marks the start of _get_batches_of_transformed_samples helpers
 
+    def random_transform_entry(image, labels):
+        # TODO: DO ME TONIGHT!
+        return image, labels
+
+    def preprocess_entry(image, bbox, labels):
+        if bbox.shape == (4,):
+            # Transform bbox into the form [x1, y1, x2, y2, class]
+            bbox[2] += bbox[0]
+            bbox[3] += bbox[1]
+            bbox = [int(b) for b in bbox]
+
+            # Get cropped image
+            image = image[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+            # TBI CONFIRM
+            labels[:, 0] -= bbox[0]
+            labels[:, 1] -= bbox[1]
+
+        # Apply transformation
+        if self.transform_generator:
+            image, labels = self.random_transform_entry(image, labels)
+
+        # resize image
+        # image = self.resize_image(image)
+
+        return, image, labels
+
+    def preprocess_image_group(self, image_group, bbox_group, labels_group):
+        for i, (image, bbox, labels) in enumerate(zip(image_group, bbox_group, labels_group)):
+            # Preprocess each image individually
+            image, labels = preprocess_entry(image, bbox, labels)
+
+            # Store preprocessed image and labels back into group
+            image_group[i]  = image
+            labels_group[i] = labels
+
+        return image_group, labels_group
 
     ###########################################################################
     #### This marks the end of _get_batches_of_transformed_samples helpers
@@ -96,9 +154,9 @@ class FacialLandmarkGenerator(object):
 
         import pdb; pdb.set_trace()
 
-        # # perform preprocessing on image
-        # image_group = self.preprocess_image_group(image_group, bbox_group)
-        #
+        # perform preprocessing on image
+        image_group, labels_group = self.preprocess_image_group(image_group, bbox_group, labels_group)
+
         # # compuate network inputs
         # inputs = self.compute_inputs(image_group)
         #

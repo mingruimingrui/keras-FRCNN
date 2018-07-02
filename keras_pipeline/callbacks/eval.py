@@ -1,5 +1,5 @@
 import keras
-from ..utils.eval import evaluate_detection
+from ..evaluation.eval import evaluate_detection
 
 
 class EvaluateDetection(keras.callbacks.Callback):

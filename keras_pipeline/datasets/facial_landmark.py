@@ -57,9 +57,6 @@ class FacialLandmarkDataset(ImageDatasetTemplate):
     def get_image_aspect_ratio(self, image_index):
         return self.image_infos[image_index]['aspect_ratio']
 
-    # def get_num_image_classes(self):
-    #     return len(self.image_classes)
-
     def load_image_info(self, image_index):
         return self.image_infos[image_index]
 
@@ -72,15 +69,3 @@ class FacialLandmarkDataset(ImageDatasetTemplate):
 
     def load_facial_landmark_array(self, image_index):
         return np.array(self.image_infos[image_index]['points'])
-
-    # def load_image_class_array(self, image_index):
-    #     category_ids = self.load_image_info(image_index)['category_ids']
-    #     if not isinstance(category_ids, list):
-    #         category_ids = [category_ids]
-    #     return np.array(category_ids)
-
-    # def name_to_label(self, name):
-    #     return self.image_classes[name]['id']
-
-    # def label_to_name(self, id):
-    #     return self.image_classes_id[id]['name']

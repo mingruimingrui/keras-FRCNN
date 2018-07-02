@@ -19,7 +19,6 @@ def detection_inference_on_single_image(model, image, min_side=800, max_side=133
         boxes    : The bounding box axis for each detection in the format [x1, y1, x2, y2]
         scores   : The scores for each detection
         labels   : The labels for each detection
-
     """
     assert len(image.shape) == 3, 'Image must be of dimension 3'
 

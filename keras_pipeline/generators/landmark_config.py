@@ -38,14 +38,14 @@ class LandmarkGeneratorConfig(ConfigTemplate):
         self.add(
             'image_height',
             'Height of image',
-            default = 92,
+            default = 32,
             accepted_types = 'int-like'
         )
 
         self.add(
             'image_width',
             'Width of image',
-            default = 92,
+            default = 32,
             accepted_types = 'int-like'
         )
 
@@ -131,7 +131,7 @@ class LandmarkGeneratorConfig(ConfigTemplate):
         self.add(
             'flip_y_chance',
             'The chance that y-axis will be flipped',
-            default = 0.5,
+            default = 0,
             accepted_types = 'numeric'
         )
 

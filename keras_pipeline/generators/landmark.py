@@ -171,7 +171,7 @@ class LandmarkGenerator(object):
         return np.array(image_group, dtype=keras.backend.floatx())
 
     def compute_targets(self, labels_group):
-        return np.array(labels_group).reshape((len(labels_group), -1))
+        return np.array(labels_group, dtype=keras.backend.floatx())
 
     ###########################################################################
     #### This marks the end of _get_batches_of_transformed_samples helpers

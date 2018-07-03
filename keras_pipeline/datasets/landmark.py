@@ -54,6 +54,9 @@ class LandmarkDataset(ImageDatasetTemplate):
     def get_size(self):
         return len(self.image_infos)
 
+    def get_num_landmarks(self):
+        return len(self.image_infos['n_points'])
+
     def get_image_aspect_ratio(self, image_index):
         return self.image_infos[image_index]['aspect_ratio']
 
@@ -68,4 +71,4 @@ class LandmarkDataset(ImageDatasetTemplate):
         return np.array(self.image_infos[image_index]['bbox'])
 
     def load_landmark_array(self, image_index):
-        return np.array(self.image_infos[image_index]['points'])
+        return np.array(self.image_infos[image_index]['landmarks'])

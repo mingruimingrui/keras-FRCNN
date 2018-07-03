@@ -78,11 +78,11 @@ def create_dataset_dict(args):
             pts_data = parse_pts_file(pts_path)
 
             image_info = {
-                'id'       : img_count,
-                'file_name': '/'.join([setting, img_file_name]),
-                'bbox'     : None,
-                'n_points' : pts_data['n_points'],
-                'points'   : pts_data['points']
+                'id'        : img_count,
+                'file_name' : '/'.join([setting, img_file_name]),
+                'bbox'      : None,
+                'n_points'  : pts_data['n_points'],
+                'landmarks' : pts_data['points']
             }
             image_info['width'], image_info['height'] = get_image_size(img_path)
 

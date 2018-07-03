@@ -1,3 +1,0 @@
-[submodule "keras_pipeline/submodule/dataset"]
-	path = keras_pipeline/submodule/dataset
-	url = https://github.com/mingruimingrui/dataset.git

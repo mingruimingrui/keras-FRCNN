@@ -5,7 +5,7 @@ from pycocotools.coco import COCO
 from ._ImageDatasetTemplate import ImageDatasetTemplate
 from ..preprocessing.image import read_image
 
-class FacialLandmarkDataset(ImageDatasetTemplate):
+class LandmarkDataset(ImageDatasetTemplate):
     """ Dataset API meant to be used by generators.ImageClassGenerator
     Leverages off pycocotools, you will have to provide an appropriate
     annotation file. Also requires your dataset to be setup in the
@@ -67,5 +67,5 @@ class FacialLandmarkDataset(ImageDatasetTemplate):
     def load_image_bbox_array(self, image_index):
         return np.array(self.image_infos[image_index]['bbox'])
 
-    def load_facial_landmark_array(self, image_index):
+    def load_landmark_array(self, image_index):
         return np.array(self.image_infos[image_index]['points'])

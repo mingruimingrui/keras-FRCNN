@@ -53,10 +53,10 @@ def _validate_dataset(dataset):
     dataset.load_image_info(img_id)
 
     dataset.load_image_bbox_array(img_id)
-    dataset.load_facial_landmark_array(img_id)
+    dataset.load_landmark_array(img_id)
 
 
-class FacialLandmarkGenerator(object):
+class LandmarkGenerator(object):
     def __init__(self, config):
         _validate_dataset(config.dataset)
 
@@ -101,16 +101,40 @@ class FacialLandmarkGenerator(object):
     def load_labels_group(self, group):
         """ Returns list of labels
         labels will be in the form [n_points, 2] """
-        return [self.data.load_facial_landmark_array(image_index) for image_index in group]
+        return [self.data.load_landmark_array(image_index) for image_index in group]
 
     ###########################################################################
     #### This marks the start of _get_batches_of_transformed_samples helpers
 
-    def random_transform_entry(image, labels):
-        # TODO: DO ME TONIGHT!
+    def random_transform_entry(self, image, labels):
+        transformation = adjust_transform_for_image(next(self.transform_generator), image, self.transform_parameters.relative_translation)
+
+        # Transform image and labels
+        image = apply_transform(transformation, image, self.transform_parameters)
+        labels = transform_xy(transformation, labels)
+
         return image, labels
 
-    def preprocess_entry(image, bbox, labels):
+        transformation = adjust_transform_for_image(next(self.transform_generator), image, self.transform_parameters.relative_translation)
+
+    def resize_image(self, image, labels):
+        # Get image scale
+        h_scale = self.image_height / image.shape[0]
+        w_scale = self.image_width  / image.shape[1]
+
+        # Resize image
+        image = resize_image_2(
+            image,
+            width=self.image_width,
+            height=self.image_height,
+            stretch_to_fill=True
+        )
+        labels[:, 0] *= h_scale
+        labels[:, 1] *= w_scale
+
+        return image, labels
+
+    def preprocess_entry(self, image, bbox, labels):
         if bbox.shape == (4,):
             # Transform bbox into the form [x1, y1, x2, y2, class]
             bbox[2] += bbox[0]
@@ -128,7 +152,7 @@ class FacialLandmarkGenerator(object):
             image, labels = self.random_transform_entry(image, labels)
 
         # resize image
-        # image = self.resize_image(image)
+        image, labels = self.resize_image(image, labels)
 
         return, image, labels
 
@@ -142,6 +166,12 @@ class FacialLandmarkGenerator(object):
             labels_group[i] = labels
 
         return image_group, labels_group
+
+    def compute_inputs(self, image_group):
+        return np.array(image_group, dtype=keras.backend.floatx())
+
+    def compute_targets(self, labels_group):
+        return np.array(labels_group).reshape((len(labels_group), -1))
 
     ###########################################################################
     #### This marks the end of _get_batches_of_transformed_samples helpers
@@ -157,13 +187,13 @@ class FacialLandmarkGenerator(object):
         # perform preprocessing on image
         image_group, labels_group = self.preprocess_image_group(image_group, bbox_group, labels_group)
 
-        # # compuate network inputs
-        # inputs = self.compute_inputs(image_group)
-        #
-        # # compute network targets
-        # targets = self.compute_targets(labels_group)
-        #
-        # return inputs, targets
+        # compuate network inputs
+        inputs = self.compute_inputs(image_group)
+
+        # compute network targets
+        targets = self.compute_targets(labels_group)
+
+        return inputs, targets
 
     def _group_image_ids(self):
         """ Group img_ids according to batch_size and group_method """

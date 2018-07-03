@@ -4,11 +4,11 @@ from ..utils._config_template import ConfigTemplate
 from ..preprocessing.image_transform import TransformParameters
 
 
-class FacialLandmarkGeneratorConfig(ConfigTemplate):
-    """ For help on FacialLandmarkGeneratorConfig, use FacialLandmarkGeneratorConfig(help=True) """
+class LandmarkGeneratorConfig(ConfigTemplate):
+    """ For help on LandmarkGeneratorConfig, use LandmarkGeneratorConfig(help=True) """
 
     def __init__(self, help=False, **kwargs):
-        self.__name__ = 'FacialLandmarkGeneratorConfig'
+        self.__name__ = 'LandmarkGeneratorConfig'
         self.__params__ = OrderedDict()
 
         # Most frequently used parameters
@@ -142,7 +142,7 @@ class FacialLandmarkGeneratorConfig(ConfigTemplate):
 
 
     def _validate_kwargs_(self, **kwargs):
-        super(FacialLandmarkGeneratorConfig, self)._validate_kwargs_(**kwargs)
+        super(LandmarkGeneratorConfig, self)._validate_kwargs_(**kwargs)
 
         # This is default parameters for misc transformation parameters
         # Eg. padding_mode, image_interpolation, fill_value...

@@ -6,8 +6,8 @@ import tqdm
 import cv2
 import numpy as np
 
-from .anchors import compute_overlap
-from .visualization import draw_detections, draw_annotations
+from ..utils.anchors import compute_overlap
+from ..utils.visualization import draw_detections, draw_annotations
 
 
 def _compute_ap(recall, precision):

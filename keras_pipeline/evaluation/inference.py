@@ -4,8 +4,8 @@ import numpy as np
 import keras
 
 from ..preprocessing.image_transform import resize_image_1
-from .anchors import compute_overlap
-from .visualization import draw_detections
+from ..utils.anchors import compute_overlap
+from ..utils.visualization import draw_detections
 
 def detection_inference_on_single_image(model, image, min_side=800, max_side=1333):
     """ Performs inference on a single image using a detection model

@@ -8,7 +8,7 @@ from dataset_pipeline import ImageDataset
 
 
 # Constant variables
-DATASETS_TO_PREPARE = ['val2017']
+DATASETS_TO_PREPARE = ['train2017', 'val2017']
 
 
 def transform_dataset(dataset, set_name, args):

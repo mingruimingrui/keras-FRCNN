@@ -35,7 +35,7 @@ from ..preprocessing.transform import (
 
 def _group_image_ids(dataset, batch_size, group_method, shuffle):
     """ Group img_ids according to batch_size and group_method """
-    img_ids = dataset.list_image_index()
+    img_ids = dataset.list_all_image_index()
 
     if group_method == 'random':
         random.shuffle(img_ids)
@@ -74,17 +74,17 @@ def _validate_dataset(dataset):
     """ Validates that dataset is suitable for a detection task
     This function doesn't really generate a proper Error functions but the error log should be enough for debugging purposes
     """
-    img_id = dataset.list_image_index()[0]
+    img_id = dataset.list_all_image_index()[0]
 
     dataset.get_size()
-    dataset.get_num_object_classes()
+    dataset.get_num_classes()
     dataset.get_image_aspect_ratio(img_id)
 
     dataset.load_image(img_id)
-    dataset.load_image_info(img_id)
+    dataset.get_image_info(img_id)
 
-    dataset.load_annotations(img_id)
-    dataset.load_annotations_array(img_id)
+    dataset.get_annotations_info(img_id)
+    dataset.get_annotations_array(img_id)
 
 
 
@@ -98,7 +98,7 @@ class DetectionGenerator(object):
         # The DetectionDataset object is picklable
         self.data            = config.dataset
         self.size            = config.dataset.get_size()
-        self.num_classes     = config.dataset.get_num_object_classes()
+        self.num_classes     = config.dataset.get_num_classes()
         self.label_to_name   = config.dataset.label_to_name
 
         # Typical generator config
@@ -156,11 +156,10 @@ class DetectionGenerator(object):
     def load_annotations_group(self, group):
         """ Returns list of annotations from group
         Annotations should be in the form [x1, y1, x2, y2, class]
-        Notably this is different to keras_pipeline.datasets.ImageDatasetTemplate.load_annotations_array
         """
         annotations_group = []
         for image_index in group:
-            annotations = self.data.load_annotations_array(image_index)
+            annotations = self.data.get_annotations_array(image_index)
 
             # for annotations_group bbox must be in x1, y1, x2, y2 format
             annotations[:, 2] = annotations[:, 0] + annotations[:, 2]
@@ -344,7 +343,7 @@ class DetectionGenerator(object):
         [network_inputs, orig_image], [orig_annotations, image_scale]
         """
 
-        img_ids = self.data.list_image_index()
+        img_ids = self.data.list_all_image_index()
         num_img = len(img_ids)
         i = 0
 

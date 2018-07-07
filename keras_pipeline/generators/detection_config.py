@@ -17,7 +17,10 @@ class DetectionGeneratorConfig(ConfigTemplate):
 
         self.add(
             'dataset',
-            'Dataset for this generator',
+            'Dataset for this generator. Simply have to have the functions: ' + \
+            'get_size, get_num_classes, list_all_image_index, label_to_name, ' + \
+            'load_image, get_image_info, get_image_aspect_ratio, ' + \
+            'get_annotations_info, get_annotations_array',
             required = True
         )
 

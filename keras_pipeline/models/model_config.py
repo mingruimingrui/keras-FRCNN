@@ -9,7 +9,6 @@ from ..utils.validation import (
 )
 
 from .backbone import load_backbone_pyramid_feautre_shapes_fn
-from ..utils import anchors as util_anchors
 
 
 class RetinaNetConfig(ConfigTemplate):

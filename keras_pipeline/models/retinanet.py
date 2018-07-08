@@ -343,6 +343,8 @@ def LoadRetinaNet(file_path, backbone_name, config=None):
 
     """
     # Load loss configs if config object is provided
+    detection_focal_loss = losses.make_detection_focal_loss()
+    detection_smooth_l1_loss = losses.make_detection_smooth_l1_loss()
     if config is not None:
         detection_focal_loss = losses.make_detection_focal_loss(**config.classification_loss_options)
         detection_smooth_l1_loss = losses.make_detection_smooth_l1_loss(**config.regression_loss_options)
@@ -354,8 +356,8 @@ def LoadRetinaNet(file_path, backbone_name, config=None):
         'FilterDetections'         : layers.FilterDetections,
         'Anchors'                  : layers.Anchors,
         'ClipBoxes'                : layers.ClipBoxes,
-        'detection_focal_loss'     : losses.make_detection_focal_loss(),
-        'detection_smooth_l1_loss' : losses.make_detection_smooth_l1_loss(),
+        'detection_focal_loss'     : detection_focal_loss,
+        'detection_smooth_l1_loss' : detection_smooth_l1_loss,
     }
 
     # Get backbone custom objects

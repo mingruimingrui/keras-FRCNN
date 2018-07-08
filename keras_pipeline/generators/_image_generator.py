@@ -24,6 +24,12 @@ class ImageGenerator(object):
 
         raise NotImplementedError('__init__ is not defined')
 
+        # Create transform generator
+        self.transform_parameters = config.transform_parameters
+        self.transform_generator = None
+        if config.allow_transform:
+            self.transform_generator = self._make_transform_generator(config)
+
         # Validate dataset
         self._validate_dataset()
 

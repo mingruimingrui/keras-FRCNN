@@ -6,9 +6,10 @@ import math
 import numpy as np
 import random
 import threading
-import warnings
 
 import keras
+
+from ._image_generator import ImageGenerator
 
 from ..utils.anchors import (
     anchor_targets_bbox,
@@ -22,90 +23,30 @@ from ..preprocessing.image_transform import (
     resize_image_1
 )
 
-from ..preprocessing.transform import (
-    random_transform_generator,
-    transform_aabb
-)
+from ..preprocessing.transform import transform_aabb
 
 
-""" These functions written outside are those that
-    1. does not reference self and
-    2. won't be called (or have the potential to be called) after __init__ is done
-"""
-
-def _group_image_ids(dataset, batch_size, group_method, shuffle):
-    """ Group img_ids according to batch_size and group_method """
-    img_ids = dataset.list_all_image_index()
-
-    if group_method == 'random':
-        random.shuffle(img_ids)
-    elif group_method == 'ratio':
-        img_ids.sort(key=lambda x: dataset.get_image_aspect_ratio(x))
-
-    num_groups = math.ceil(len(img_ids) / batch_size)
-
-    groups = []
-    for group_i in range(num_groups):
-        start = batch_size * group_i
-        end   = batch_size * (group_i + 1)
-        groups.append(img_ids[start:end])
-
-    if shuffle:
-        random.shuffle(groups)
-
-    return groups
-
-
-def _make_transform_generator(config):
-    return random_transform_generator(
-        min_rotation    = config.min_rotation,
-        max_rotation    = config.max_rotation,
-        min_translation = config.min_translation,
-        max_translation = config.max_translation,
-        min_shear       = config.min_shear,
-        max_shear       = config.max_shear,
-        min_scaling     = config.min_scaling,
-        max_scaling     = config.max_scaling,
-        flip_x_chance   = config.flip_x_chance,
-        flip_y_chance   = config.flip_y_chance,
-    )
-
-def _validate_dataset(dataset):
-    """ Validates that dataset is suitable for a detection task
-    This function doesn't really generate a proper Error functions but the error log should be enough for debugging purposes
-    """
-    img_id = dataset.list_all_image_index()[0]
-
-    dataset.get_size()
-    dataset.get_num_classes()
-    dataset.get_image_aspect_ratio(img_id)
-
-    dataset.load_image(img_id)
-    dataset.get_image_info(img_id)
-
-    dataset.get_annotations_info(img_id)
-    dataset.get_annotations_array(img_id)
-
-
-
-class DetectionGenerator(object):
+class DetectionGenerator(ImageGenerator):
     def __init__(self, config):
-        _validate_dataset(config.dataset)
-
-        # here dataset is the only object attribute
-        # generally object and callable attributes in the generator is
-        # ill adviced due to to their sometimes unpickable nature
-        # The DetectionDataset object is picklable
-        self.data            = config.dataset
+        # Store general dataset info
+        self.dataset         = config.dataset
+        self.all_image_index = config.dataset.list_all_image_index()
         self.size            = config.dataset.get_size()
         self.num_classes     = config.dataset.get_num_classes()
         self.label_to_name   = config.dataset.label_to_name
 
         # Typical generator config
-        self.batch_size      = config.batch_size
-        self.image_min_side  = config.image_min_side
-        self.image_max_side  = config.image_max_side
-        self.shuffle         = config.shuffle_groups
+        self.batch_size     = config.batch_size
+        self.image_min_side = config.image_min_side
+        self.image_max_side = config.image_max_side
+        self.group_method   = config.group_method
+        self.shuffle        = config.shuffle_groups
+
+        # Create transform generator
+        self.transform_parameters = config.transform_parameters
+        self.transform_generator = None
+        if config.allow_transform:
+            self.transform_generator = self._make_transform_generator(config)
 
         # Compute anchors variables
         self.anchor_sizes   = config.anchor_sizes
@@ -115,26 +56,59 @@ class DetectionGenerator(object):
         self.compute_pyramid_feature_shapes_for_img_shape = \
             config.compute_pyramid_feature_shapes_for_img_shape
 
-        # Define groups (1 group ==  1 batch)
-        self.groups = _group_image_ids(
-            config.dataset,
-            config.batch_size,
-            config.group_method,
-            config.shuffle_groups
-        )
+        # Validate dataset
+        self._validate_dataset()
 
-        # Create transform generator
-        self.transform_parameters = config.transform_parameters
-        self.transform_generator = None
-        if config.allow_transform:
-            self.transform_generator = _make_transform_generator(config)
-
-        # Create the tools which helps define the order in which the
+        # Tools which helps order the data generated
         self.lock = threading.Lock() # this is to allow for parrallel batch processing
         self.group_index_generator = self._make_index_generator()
 
+
     ###########################################################################
-    #### Detection Specific functions
+    #### This marks the start of helper functions
+
+    def _validate_dataset(self):
+        """ Dataset validator which validates the suitability of the dataset """
+        img_id = self.dataset.list_all_image_index()[0]
+
+        size         = self.dataset.get_size()
+        num_class    = self.dataset.get_num_classes()
+        aspect_ratio = self.dataset.get_image_aspect_ratio(img_id)
+        assert isinstance(size, int), 'Size must be an integer, got {}'.format(type(size))
+        assert isinstance(num_class, int), 'Num classes must be an integer, got {}'.format(type(num_class))
+        assert isinstance(aspect_ratio, float), 'Aspect ratio must be a float, got {}'.format(type(aspect_ratio))
+
+        img = self.dataset.load_image(img_id)
+        assert (len(img.shape) == 3) and (img.shape[-1] == 3), 'img is of wrong shape, got {}'.format(img.shape)
+
+        ann = self.dataset.get_annotations_array(img_id)
+        assert ann.shape[1] == 5, 'get_annotations_array should return a (None, 5) shaped array, got {}'.format(ann.shape)
+
+    def _group_image_ids(self):
+        """ Group img_ids according to batch_size and group_method """
+        # Retrieve all image ids and count number of groups
+        img_ids = self.all_image_index
+        num_groups = math.ceil(len(img_ids) / self.batch_size)
+
+        # Perform grouping
+        if self.group_method == 'random':
+            random.shuffle(img_ids)
+        elif self.group_method == 'ratio':
+            img_ids.sort(key=lambda x: self.dataset.get_image_aspect_ratio(x))
+
+        # Group image ids
+        groups = []
+        for group_i in range(num_groups):
+            start = self.batch_size * group_i
+            end   = self.batch_size * (group_i + 1)
+            groups.append(img_ids[start:end])
+
+        # Perform shuffing
+        if self.shuffle:
+            random.shuffle(groups)
+
+        # Save groups
+        self.groups = groups
 
     def compute_anchors(self, image_shape):
         return compute_all_anchors(
@@ -146,49 +120,38 @@ class DetectionGenerator(object):
             shapes_callback = self.compute_pyramid_feature_shapes_for_img_shape,
         )
 
+
     ###########################################################################
-    #### This marks the start of _get_batches_of_transformed_samples helpers
+    #### This marks the start of _get_batches_of_transformed_samples helper functions
 
-    def load_image_group(self, group):
-        """ Returns list of images from group """
-        return [self.data.load_image(image_index) for image_index in group]
+    def load_X_group(self, group):
+        """ Loads the raw group images from the dataset """
+        return [self.dataset.load_image(image_index) for image_index in group]
 
-    def load_annotations_group(self, group):
-        """ Returns list of annotations from group
-        Annotations should be in the form [x1, y1, x2, y2, class]
+    def load_Y_group(self, group):
+        """ Loads the raw group annotations from the dataset
+        Annotations are of the shape (None, 5),
+        each detection is in the format (x1, y1, x2, y2, class)
         """
-        annotations_group = []
-        for image_index in group:
-            annotations = self.data.get_annotations_array(image_index)
+        return [self.dataset.get_annotations_array(image_index) for image_index in group]
 
-            # for annotations_group bbox must be in x1, y1, x2, y2 format
-            annotations[:, 2] = annotations[:, 0] + annotations[:, 2]
-            annotations[:, 3] = annotations[:, 1] + annotations[:, 3]
+    def filter_annotations(self, image, annotations):
+        assert isinstance(annotations, np.ndarray)
 
-            annotations_group.append(annotations)
+        # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0 | x2 >= image.shape[1] | y2 >= image.shape[0]
+        invalid_indices = np.where(
+            (annotations[:, 2] <= annotations[:, 0]) |
+            (annotations[:, 3] <= annotations[:, 1]) |
+            (annotations[:, 0] < 0) |
+            (annotations[:, 1] < 0) |
+            (annotations[:, 2] > image.shape[1]) |
+            (annotations[:, 3] > image.shape[0])
+        )[0]
 
-        return annotations_group
+        if len(invalid_indices):
+            annotations = np.delete(annotations, invalid_indices, axis=0)
 
-    def filter_annotations(self, image_group, annotations_group):
-        # test all annotations
-        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
-            assert isinstance(annotations, np.ndarray)
-
-            # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0 | x2 >= image.shape[1] | y2 >= image.shape[0]
-            invalid_indices = np.where(
-                (annotations[:, 2] <= annotations[:, 0]) |
-                (annotations[:, 3] <= annotations[:, 1]) |
-                (annotations[:, 0] < 0) |
-                (annotations[:, 1] < 0) |
-                (annotations[:, 2] > image.shape[1]) |
-                (annotations[:, 3] > image.shape[0])
-            )[0]
-
-            # delete invalid indicies
-            if len(invalid_indices):
-                annotations_group[index] = np.delete(annotations, invalid_indices, axis=0)
-
-        return image_group, annotations_group
+        return image, annotations
 
     def random_transform_entry(self, image, annotations):
         transformation = adjust_transform_for_image(next(self.transform_generator), image, self.transform_parameters.relative_translation)
@@ -205,6 +168,10 @@ class DetectionGenerator(object):
         return resize_image_1(image, min_side=self.image_min_side, max_side=self.image_max_side)
 
     def preprocess_entry(self, image, annotations):
+        """ Preprocesses an entry """
+        # Filter invalid annotations
+        image, annotations = self.filter_annotations(image, annotations)
+
         # Apply transformation
         if self.transform_generator:
             image, annotations = self.random_transform_entry(image, annotations)
@@ -214,17 +181,6 @@ class DetectionGenerator(object):
         annotations[:, :4] *= image_scale
 
         return image, annotations
-
-    def preprocess_group(self, image_group, annotations_group):
-        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
-            # Preprocess a single group entry
-            image, annotations = self.preprocess_entry(image, annotations)
-
-            # Update group
-            image_group[index]       = image
-            annotations_group[index] = annotations
-
-        return image_group, annotations_group
 
     def compute_inputs(self, image_group):
         # Get the max image shape
@@ -269,111 +225,3 @@ class DetectionGenerator(object):
             regression_batch[index, ...] = regression
 
         return [labels_batch, regression_batch]
-
-    ###########################################################################
-    #### This marks the end of _get_batches_of_transformed_samples helpers
-
-    def _get_batches_of_transformed_samples(self, group):
-        # load images and annotations
-        image_group       = self.load_image_group(group)
-        annotations_group = self.load_annotations_group(group)
-
-        # check validity of annotations
-        image_group, annotations_group = self.filter_annotations(image_group, annotations_group)
-
-        # perform preprocessing
-        image_group, annotations_group = self.preprocess_group(image_group, annotations_group)
-
-        # compuate network inputs
-        inputs = self.compute_inputs(image_group)
-
-        # compute network targets
-        targets = self.compute_targets(image_group, annotations_group)
-
-        return inputs, targets
-
-    def _make_index_generator(self):
-        """ Returns a generator which yields group index to train the model in """
-        # start group_index at -1 so that first group_index returned is 0
-        num_groups = len(self.groups)
-        group_index = -1
-        reset_point = num_groups - 1
-
-        while True:
-            if group_index < reset_point:
-                group_index += 1
-            else:
-                if self.shuffle:
-                    random.shuffle(self.groups)
-                group_index = 0
-            yield group_index
-
-    def next(self):
-        with self.lock:
-            group_index = next(self.group_index_generator)
-            group = self.groups[group_index]
-        return self._get_batches_of_transformed_samples(group)
-
-    def __len__(self):
-        return self.size
-
-    def __next__(self):
-        return self.next()
-
-    def __iter__(self):
-        warnings.warn('Iteration of Generator is still in an experimental phase')
-        group_index = -1
-        reset_point = len(self.groups) - 1
-
-        while group_index < reset_point:
-            group_index += 1
-            group = self.groups[group_index]
-            yield self._get_batches_of_transformed_samples(group)
-
-    ###########################################################################
-    #### This marks the start of all evaluation only methods
-
-    def create_eval_generator(self):
-        """ Creates an optimized evaluation set generator
-        At present evaluation is working only at batch sizes of 1
-
-        Generator would return original images and annotations along with network inputs.
-
-        Generator generates items in the following format
-        [network_inputs, orig_image], [orig_annotations, image_scale]
-        """
-
-        img_ids = self.data.list_all_image_index()
-        num_img = len(img_ids)
-        i = 0
-
-        while i < num_img:
-            img_id = img_ids[i]
-
-            # load images and annotations
-            image_group       = self.load_image_group([img_id])
-            annotations_group = self.load_annotations_group([img_id])
-
-            # Check validity of annotations
-            image_group, annotations_group = self.filter_annotations(image_group, annotations_group)
-
-            # Get original image and annotations
-            orig_image = image_group[0]
-            orig_annotations = annotations_group[0]
-
-            # Perform resizing
-            scaled_image, image_scale = self.resize_image(orig_image)
-            scaled_annotations = orig_annotations.copy()
-            scaled_annotations[:, :4] *= image_scale
-
-            # Recompile into group from
-            image_group = [scaled_image]
-            annotations_group = [scaled_annotations]
-
-            # Compuate network inputs
-            inputs = self.compute_inputs(image_group)
-
-            # Increase counter
-            i += 1
-
-            yield [inputs, orig_image], [orig_annotations, image_scale]

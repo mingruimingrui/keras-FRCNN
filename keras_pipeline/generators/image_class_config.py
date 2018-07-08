@@ -131,7 +131,7 @@ class ImageClassGeneratorConfig(ConfigTemplate):
         self.add(
             'flip_y_chance',
             'The chance that y-axis will be flipped',
-            default = 0.5,
+            default = 0,
             accepted_types = 'numeric'
         )
 

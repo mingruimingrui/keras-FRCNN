@@ -36,6 +36,11 @@ def transform_dataset(dataset, set_name, args):
     # Store annotations individually
     for ann in dataset['annotations']:
         bbox = ann['bbox']
+
+        if (bbox[2] <= 1) or (bbox[3] <= 1):
+            print('Invalid annotation with bbox {}, skipping'.format(bbox))
+            continue
+
         bbox[2] += bbox[0]
         bbox[3] += bbox[1]
 

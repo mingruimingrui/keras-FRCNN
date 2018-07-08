@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-from ..utils import anchors as util_anchors
-
 from ..utils._config_template import ConfigTemplate
 from ..preprocessing.image_transform import TransformParameters
 

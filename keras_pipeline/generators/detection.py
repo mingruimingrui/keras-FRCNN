@@ -75,7 +75,7 @@ class DetectionGenerator(ImageGenerator):
         num_classes  = self.dataset.get_num_classes()
         aspect_ratio = self.dataset.get_image_aspect_ratio(img_id)
         assert isinstance(size, int), 'Size must be an integer, got {}'.format(type(size))
-        assert isinstance(num_classes, int), 'Num classes must be an integer, got {}'.format(type(num_class))
+        assert isinstance(num_classes, int), 'Num classes must be an integer, got {}'.format(type(num_classes))
         assert isinstance(aspect_ratio, float), 'Aspect ratio must be a float, got {}'.format(type(aspect_ratio))
 
         img = self.dataset.load_image(img_id)

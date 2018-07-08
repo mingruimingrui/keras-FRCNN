@@ -72,10 +72,10 @@ class DetectionGenerator(ImageGenerator):
         img_id = self.dataset.list_all_image_index()[0]
 
         size         = self.dataset.get_size()
-        num_class    = self.dataset.get_num_classes()
+        num_classes  = self.dataset.get_num_classes()
         aspect_ratio = self.dataset.get_image_aspect_ratio(img_id)
         assert isinstance(size, int), 'Size must be an integer, got {}'.format(type(size))
-        assert isinstance(num_class, int), 'Num classes must be an integer, got {}'.format(type(num_class))
+        assert isinstance(num_classes, int), 'Num classes must be an integer, got {}'.format(type(num_class))
         assert isinstance(aspect_ratio, float), 'Aspect ratio must be a float, got {}'.format(type(aspect_ratio))
 
         img = self.dataset.load_image(img_id)
@@ -83,6 +83,8 @@ class DetectionGenerator(ImageGenerator):
 
         ann = self.dataset.get_annotations_array(img_id)
         assert ann.shape[1] == 5, 'get_annotations_array should return a (None, 5) shaped array, got {}'.format(ann.shape)
+
+        label = self.dataset.label_to_name(num_classes - 1)
 
     def _group_image_ids(self):
         """ Group img_ids according to batch_size and group_method """

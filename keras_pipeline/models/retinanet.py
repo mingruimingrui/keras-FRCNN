@@ -25,7 +25,6 @@ def default_classification_model(
 
     Returns
         A keras.models.Model that predicts classes for each anchor
-
     """
     options = {
         'kernel_size' : 3,
@@ -201,6 +200,21 @@ def __build_pyramid_features(C3, C4, C5, feature_size=256):
     return P3, P4, P5, P6, P7
 
 
+def __compile_retina_net(training_model, config):
+    """ Compiles a training retinanet model """
+    classification_loss = losses.make_detection_focal_loss(**config.classification_loss_options)
+    regression_loss = losses.make_detection_smooth_l1_loss(**config.regression_loss_options)
+    optimizer = getattr(keras.optimizers, config.optimizer_name)(**config.optimizer_options)
+
+    training_model.compile(
+        loss = {
+            'classification': classification_loss,
+            'regression'    : regression_loss
+        },
+        optimizer = optimizer
+    )
+
+
 def RetinaNetTrain(config):
     """ Build a retinanet model with initial weights for training
 
@@ -249,13 +263,7 @@ def RetinaNetTrain(config):
         name    = config.name
     )
 
-    training_model.compile(
-        loss = {
-            'classification': config.classification_loss,
-            'regression'    : config.regression_loss
-        },
-        optimizer = config.optimizer
-    )
+    __compile_retina_net(training_model, config)
 
     return training_model
 
@@ -322,7 +330,7 @@ def RetinaNet(config):
     return prediction_model
 
 
-def LoadRetinaNet(file_path, backbone_name):
+def LoadRetinaNet(file_path, backbone_name, config=None):
     """ Load a retinanet model from a h5 file
 
     Args
@@ -334,6 +342,13 @@ def LoadRetinaNet(file_path, backbone_name):
         A retinanet model as defined in the h5 file
 
     """
+    # Load loss configs if config object is provided
+    detection_focal_loss = losses.make_detection_focal_loss()
+    detection_smooth_l1_loss = losses.make_detection_smooth_l1_loss()
+    if config is not None:
+        detection_focal_loss = losses.make_detection_focal_loss(**config.classification_loss_options)
+        detection_smooth_l1_loss = losses.make_detection_smooth_l1_loss(**config.regression_loss_options)
+
     # Dictionary of custom layers used in the RetinaNet
     custom_objects = {
         'ResizeTo'                 : layers.ResizeTo,
@@ -341,8 +356,8 @@ def LoadRetinaNet(file_path, backbone_name):
         'FilterDetections'         : layers.FilterDetections,
         'Anchors'                  : layers.Anchors,
         'ClipBoxes'                : layers.ClipBoxes,
-        'detection_smooth_l1_loss' : losses.make_detection_smooth_l1_loss(),
-        'detection_focal_loss'     : losses.make_detection_focal_loss(),
+        'detection_focal_loss'     : detection_focal_loss,
+        'detection_smooth_l1_loss' : detection_smooth_l1_loss,
     }
 
     # Get backbone custom objects

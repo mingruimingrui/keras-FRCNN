@@ -1,3 +1,7 @@
+""" Detection losses are different due to their need for skips
+All functions here are functions that creates a loss function
+"""
+
 import keras
 from .. import backend
 

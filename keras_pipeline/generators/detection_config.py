@@ -209,14 +209,3 @@ class DetectionGeneratorConfig(ConfigTemplate):
         # Eg. padding_mode, image_interpolation, fill_value...
         # There are no plans on adding this to the list of variables available
         self.transform_parameters = TransformParameters()
-
-
-    def compute_anchors(self, image_shape):
-        return util_anchors.compute_all_anchors(
-            image_shape,
-            sizes = self.anchor_sizes,
-            strides = self.anchor_strides,
-            ratios = self.anchor_ratios,
-            scales = self.anchor_scales,
-            shapes_callback = self.compute_pyramid_feature_shapes_for_img_shape,
-        )

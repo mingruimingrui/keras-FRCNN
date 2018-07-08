@@ -9,8 +9,6 @@ from ..utils._validation import (
 )
 
 from .backbone import load_backbone_pyramid_feautre_shapes_fn
-from ..utils import anchors as util_anchors
-from .. import losses
 
 
 class RetinaNetConfig(ConfigTemplate):
@@ -51,24 +49,30 @@ class RetinaNetConfig(ConfigTemplate):
         # Loss and optimizer config
 
         self.add(
-            'classification_loss',
-            'A classifier loss function for shape (None, None, 4), default focal_loss',
-            default = losses.make_detection_focal_loss()
+            'classification_loss_options',
+            'Kwarg inputs for classification loss (focal loss) in dict form',
+            default = {}
         )
 
         self.add(
-            'regression_loss',
-            'A regression loss function, default smooth_l1_loss '        + \
-            'Do note that the expected y_true shape is (None, None, 5) ' + \
-            'and expected y_pred shape is (None, None, 4). '              + \
-            'Last channel in y_true is to determine if anchor should be ignored',
-            default = losses.make_detection_smooth_l1_loss()
+            'regression_loss_options',
+            'Kwarg inputs for regression loss (smooth l1 loss) in dict form',
+            default = {}
         )
 
         self.add(
-            'optimizer',
-            'A custom user defined optimizer, default Adam',
-            default = keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
+            'optimizer_name',
+            'The name of a keras available optimizer from https://keras.io/optimizers/, default adam',
+            default = 'adam'
+        )
+
+        self.add(
+            'optimizer_options',
+            'Kwarg inputs for optimizers (in dict form), common inputs are lr, clipnorm, clipvalue, decay',
+            default = {
+                'lr': 1e-5,
+                'clipnorm': 0.001
+            }
         )
 
         # Backbone config
@@ -168,14 +172,3 @@ class RetinaNetConfig(ConfigTemplate):
 
     def get_num_anchors(self):
         return len(self.anchor_ratios) * len(self.anchor_scales)
-
-
-    def compute_anchors(self, image_shape):
-        return util_anchors.compute_all_anchors(
-            image_shape,
-            sizes = self.anchor_sizes,
-            strides = self.anchor_strides,
-            ratios = self.anchor_ratios,
-            scales = self.anchor_scales,
-            shapes_callback = self.compute_pyramid_feature_shapes_for_img_shape,
-        )

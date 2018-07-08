@@ -84,7 +84,7 @@ class DetectionGenerator(ImageGenerator):
         ann = self.dataset.get_annotations_array(img_id)
         assert ann.shape[1] == 5, 'get_annotations_array should return a (None, 5) shaped array, got {}'.format(ann.shape)
 
-        label = self.dataset.label_to_name(num_classes - 1)
+        self.dataset.label_to_name(num_classes - 1)
 
     def _group_image_ids(self):
         """ Group img_ids according to batch_size and group_method """

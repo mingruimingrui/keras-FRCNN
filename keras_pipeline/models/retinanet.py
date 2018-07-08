@@ -200,7 +200,7 @@ def __build_pyramid_features(C3, C4, C5, feature_size=256):
     return P3, P4, P5, P6, P7
 
 
-def __compile_retina_net(model, config):
+def __compile_retina_net(training_model, config):
     """ Compiles a training retinanet model """
     classification_loss = losses.make_detection_focal_loss(**config.classification_loss_options)
     regression_loss = losses.make_detection_smooth_l1_loss(**config.regression_loss_options)

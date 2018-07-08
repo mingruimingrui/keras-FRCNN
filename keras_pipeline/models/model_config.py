@@ -56,7 +56,7 @@ class RetinaNetConfig(ConfigTemplate):
         )
 
         self.add(
-            'regression_loss_options'
+            'regression_loss_options',
             'Kwarg inputs for regression loss (smooth l1 loss) in dict form',
             default = {}
         )

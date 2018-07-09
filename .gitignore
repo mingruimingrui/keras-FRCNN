@@ -116,3 +116,6 @@ debug*
 # Temp scripts
 temp*
 tmp*
+
+# Unready scripts
+training/

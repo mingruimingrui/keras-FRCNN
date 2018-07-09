@@ -30,6 +30,8 @@ def transform_dataset(dataset, set_name, args):
     )
 
     # Set classes
+    old_id_to_new_id = {cat['id']: i
+        for i, cat in enumerate(dataset['categories'])}
     class_names = [cat['name'] for cat in dataset['categories']]
     pipeline_dataset.set_classes(class_names)
 
@@ -41,13 +43,14 @@ def transform_dataset(dataset, set_name, args):
             print('Invalid annotation with bbox {}, skipping'.format(bbox))
             continue
 
+        # Transform from x, y, w, h to x1, y1, x2, y2
         bbox[2] += bbox[0]
         bbox[3] += bbox[1]
 
         pipeline_dataset.set_single_image_annotation(
             image_id=ann['image_id'],
             bbox=bbox,
-            ann_class=ann['category_id'],
+            ann_class=old_id_to_new_id[ann['category_id']],
             segmentation=ann['segmentation']
         )
 

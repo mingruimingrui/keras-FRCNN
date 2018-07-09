@@ -75,15 +75,27 @@ def _get_annotations_and_detections(
     all_annotations = [[None for label in range(generator.num_classes)] for i in range(num_images)]
     all_detections  = [[None for label in range(generator.num_classes)] for i in range(num_images)]
 
-    # Create eval_generator
-    eval_generator = generator.create_eval_generator()
-
     # Create progress bar
     pbar = tqdm.tqdm(total=num_images, desc='Getting annotations and detections')
 
     for i in range(num_images):
         pbar.update(1)
-        (image_input, image), (annotations, image_scale) = next(eval_generator)
+        image_index = generator.all_image_index[i]
+
+        # load group X and Y
+        X_group = generator.load_X_group([image_index])
+        Y_group = generator.load_Y_group([image_index])
+
+        # Get original image and annotations
+        image       = X_group[0]
+        annotations = Y_group[0]
+
+        # Get model input and scale
+        image_input, image_scale = generator.resize_image(image.copy())
+        image_input = np.expand_dims(image_input, 0)
+
+        # Force correct types
+        image = image.astype('uint8')
 
         # Perform predictions
         boxes, scores, labels = model.predict(image_input)

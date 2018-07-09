@@ -60,6 +60,10 @@ class ImageGenerator(object):
         """ Compute the network outputs """
         raise NotImplementedError('compute_targets is not defined')
 
+    def as_tf_generator(self):
+        """ Creates a generator which generates data in a format suitable for tf.data.Dataset.from_generator """
+        raise NotImplementedError('as_tf_generator is not defined')
+
 
     ###########################################################################
     #### This marks the start of helper functions

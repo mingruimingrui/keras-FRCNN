@@ -119,3 +119,4 @@ tmp*
 
 # Unready scripts
 training/
+demo_non_coco/

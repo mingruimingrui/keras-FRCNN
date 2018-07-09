@@ -19,7 +19,7 @@ from keras_pipeline.models import (
 )
 
 # Dataset and generator
-from keras_pipeline.datasets import DetectionDataset
+from dataset_pipeline import ImageDataset
 from keras_pipeline.generators import DetectionGeneratorConfig, DetectionGenerator
 
 # Evaluation callbacks
@@ -79,14 +79,14 @@ def create_callback(training_model, prediction_model, validation_generator, back
         callbacks.append(evaluation)
 
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
-        monitor  = 'loss',
-        factor   = 0.1,
-        patience = 2,
-        verbose  = 1,
-        mode     = 'auto',
-        epsilon  = 0.0001,
-        cooldown = 0,
-        min_lr   = 0
+        monitor   = 'loss',
+        factor    = 0.1,
+        patience  = 2,
+        verbose   = 1,
+        mode      = 'auto',
+        min_delta = 0.0001,
+        cooldown  = 0,
+        min_lr    = 0
     ))
 
     return callbacks
@@ -133,8 +133,8 @@ def make_models(model_config, args):
 
 def load_datasets(args):
     # Load dataset information
-    train_set      = DetectionDataset(args.coco_path, 'instances_train2017.json', 'train2017')
-    validation_set = DetectionDataset(args.coco_path, 'instances_val2017.json'  , 'val2017'  )
+    train_set      = ImageDataset(os.path.join(args.coco_path, 'annotations', 'pipeline_train2017.json'))
+    validation_set = ImageDataset(os.path.join(args.coco_path, 'annotations', 'pipeline_val2017.json'))
 
     return train_set, validation_set
 
@@ -154,7 +154,7 @@ def validate_requirements():
     # Check that system has GPU
     from tensorflow.python.client import device_lib
     local_devices = device_lib.list_local_devices()
-    assert 'GPU' in [d.device_type for d in local_devices], 'Training must be using GPU'
+    # assert 'GPU' in [d.device_type for d in local_devices], 'Training must be using GPU'
 
 
 def setup():
@@ -224,7 +224,7 @@ def main():
     train_set, validation_set = load_datasets(args)
 
     # Create a model config object to store information on model
-    model_config = RetinaNetConfig(num_classes = train_set.get_num_object_classes())
+    model_config = RetinaNetConfig(num_classes = train_set.get_num_classes())
 
     # Make model
     print('\n==== Making Model ====')
@@ -252,7 +252,7 @@ def main():
         backbone_name=model_config.backbone_name,
         args=args
     )
-
+    sys.exit('DEBUG')
     # start_training
     print('\n==== Training Model ====')
     initial_epoch = determine_initial_epoch(args)

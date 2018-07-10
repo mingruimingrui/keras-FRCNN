@@ -9,7 +9,7 @@ from .resnet import ResNet50, ResNet50Backbone
 from .vgg import VGG16, VGG16Backbone
 
 # Detection
-from .model_config import RetinaNetConfig
+from .retinanet_config import RetinaNetConfig
 from .retinanet import (
     RetinaNet,
     RetinaNetTrain,

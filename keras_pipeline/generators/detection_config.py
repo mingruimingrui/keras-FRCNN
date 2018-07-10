@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-from ..utils import anchors as util_anchors
-
 from ..utils._config_template import ConfigTemplate
 from ..preprocessing.image_transform import TransformParameters
 
@@ -17,7 +15,9 @@ class DetectionGeneratorConfig(ConfigTemplate):
 
         self.add(
             'dataset',
-            'Dataset for this generator',
+            'Dataset for this generator. Simply have to have the functions: ' + \
+            'list_all_image_index, get_size, get_num_classes, get_image_aspect_ratio, ' + \
+            'load_image, get_annotations_array, label_to_name',
             required = True
         )
 
@@ -178,7 +178,7 @@ class DetectionGeneratorConfig(ConfigTemplate):
         self.add(
             'flip_y_chance',
             'The chance that y-axis will be flipped',
-            default = 0.5,
+            default = 0,
             accepted_types = 'numeric'
         )
 

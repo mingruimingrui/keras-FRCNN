@@ -171,36 +171,58 @@ def __build_pyramid_features(C3, C4, C5, feature_size=256):
         P3, ..., P7 : Tensor representing features of different levels
 
     """
+    # # First restrict C3, C4, C5
+    # C3 = keras.layers.Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C3_reduced')(C3)
+    # C4 = keras.layers.Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C4_reduced')(C4)
+    # C5 = keras.layers.Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C5_reduced')(C5)
+    #
+    # # P5 is obtained by applying 3x3 conv on C5
+    # P5           = keras.layers.Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P5')(C5)
+    #
+    # # P4 is obtained by concating C5 and C4 and applying 3x3 conv
+    # C5_upsampled = layers.ResizeTo(name='C5_upsampled')([C5, C4])
+    # C4           = keras.layers.Concatenate(name='C4_merged')([C5_upsampled, C4])
+    # P4           = keras.layers.Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P4')(C4)
+    #
+    # # P3 is obtained by concating C5, C4 and C3 and applying 3x3 conv
+    # C4_upsampled = layers.ResizeTo(name='C4_upsampled')([C4, C3])
+    # C3           = keras.layers.Concatenate(name='C3_merged')([C4_upsampled, C3])
+    # P3           = keras.layers.Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P3')(C3)
+    #
+    # # P6 is obtained by applying 3x3 conv with stride 2 on C5
+    # P6 = keras.layers.Conv2D(feature_size, kernel_size=3, strides=2, padding='same', name='P6')(C5)
+    #
+    # # P7 is obtained by applying 3x3 conv with stride 2 on P6
+    # P7 = keras.layers.Activation('relu', name='P6_relu')(P6)
+    # P7 = keras.layers.Conv2D(feature_size, kernel_size=3, strides=2, padding='same', name='P7')(P7)
 
-    # First restrict C3, C4, C5
-    C3 = keras.layers.Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C3_reduced')(C3)
-    C4 = keras.layers.Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C4_reduced')(C4)
-    C5 = keras.layers.Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C5_reduced')(C5)
+    # upsample C5 to get P5 from the FPN paper
+    P5           = keras.layers.Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C5_reduced')(C5)
+    P5_upsampled = layers.ResizeTo(name='P5_upsampled')([P5, C4])
+    P5           = keras.layers.Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P5')(P5)
 
-    # P5 is obtained by applying 3x3 conv on C5
-    P5           = keras.layers.Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P5')(C5)
+    # add P5 elementwise to C4
+    P4           = keras.layers.Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C4_reduced')(C4)
+    P4           = keras.layers.Add(name='P4_merged')([P5_upsampled, P4])
+    P4_upsampled = layers.ResizeTo(name='P4_upsampled')([P4, C3])
+    P4           = keras.layers.Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P4')(P4)
 
-    # P4 is obtained by concating C5 and C4 and applying 3x3 conv
-    C5_upsampled = layers.ResizeTo(name='C5_upsampled')([C5, C4])
-    C4           = keras.layers.Concatenate(name='C4_merged')([C5_upsampled, C4])
-    P4           = keras.layers.Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P4')(C4)
+    # add P4 elementwise to C3
+    P3 = keras.layers.Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C3_reduced')(C3)
+    P3 = keras.layers.Add(name='P3_merged')([P4_upsampled, P3])
+    P3 = keras.layers.Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P3')(P3)
 
-    # P3 is obtained by concating C5, C4 and C3 and applying 3x3 conv
-    C4_upsampled = layers.ResizeTo(name='C4_upsampled')([C4, C3])
-    C3           = keras.layers.Concatenate(name='C3_merged')([C4_upsampled, C3])
-    P3           = keras.layers.Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P3')(C3)
-
-    # P6 is obtained by applying 3x3 conv with stride 2 on C5
+    # "P6 is obtained via a 3x3 stride-2 conv on C5"
     P6 = keras.layers.Conv2D(feature_size, kernel_size=3, strides=2, padding='same', name='P6')(C5)
 
-    # P7 is obtained by applying 3x3 conv with stride 2 on P6
-    P7 = keras.layers.Activation('relu', name='P6_relu')(P6)
+    # "P7 is computed by applying ReLU followed by a 3x3 stride-2 conv on P6"
+    P7 = keras.layers.Activation('relu', name='C6_relu')(P6)
     P7 = keras.layers.Conv2D(feature_size, kernel_size=3, strides=2, padding='same', name='P7')(P7)
 
     return P3, P4, P5, P6, P7
 
 
-def __compile_retina_net(training_model, config):
+def __compile_retinanet(training_model, config):
     """ Compiles a training retinanet model """
     classification_loss = losses.make_detection_focal_loss(**config.classification_loss_options)
     regression_loss = losses.make_detection_smooth_l1_loss(**config.regression_loss_options)
@@ -215,7 +237,7 @@ def __compile_retina_net(training_model, config):
     )
 
 
-def RetinaNetTrain(config):
+def RetinaNetTrain(config, compile=True):
     """ Build a retinanet model with initial weights for training
 
     Args
@@ -263,7 +285,8 @@ def RetinaNetTrain(config):
         name    = config.name
     )
 
-    __compile_retina_net(training_model, config)
+    if compile:
+        __compile_retinanet(training_model, config)
 
     return training_model
 
@@ -324,7 +347,7 @@ def RetinaNet(config):
 
     """
 
-    training_model = RetinaNetTrain(config)
+    training_model = RetinaNetTrain(config, compile=False)
     prediction_model = RetinaNetFromTrain(training_model, config)
 
     return prediction_model

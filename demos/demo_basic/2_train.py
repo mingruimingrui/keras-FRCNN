@@ -154,7 +154,7 @@ def validate_requirements():
     # Check that system has GPU
     from tensorflow.python.client import device_lib
     local_devices = device_lib.list_local_devices()
-    # assert 'GPU' in [d.device_type for d in local_devices], 'Training must be using GPU'
+    assert 'GPU' in [d.device_type for d in local_devices], 'Training must be using GPU'
 
 
 def setup():
@@ -252,7 +252,7 @@ def main():
         backbone_name=model_config.backbone_name,
         args=args
     )
-    sys.exit('DEBUG')
+
     # start_training
     print('\n==== Training Model ====')
     initial_epoch = determine_initial_epoch(args)

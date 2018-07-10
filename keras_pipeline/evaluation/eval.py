@@ -126,7 +126,7 @@ def _get_annotations_and_detections(
             # draw_annotations(image, annotations, label_to_name=generator.label_to_name)
             draw_detections(image, image_boxes, image_scores, image_labels,
                 label_to_name=generator.label_to_name, score_threshold=score_threshold)
-            cv2.imwrite(os.path.join(save_path, '{}.jpg'.format(i)), image)
+            cv2.imwrite(os.path.join(save_path, '{}.png'.format(i)), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
 
         for label in range(generator.num_classes):

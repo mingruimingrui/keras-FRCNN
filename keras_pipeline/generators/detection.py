@@ -42,12 +42,6 @@ class DetectionGenerator(ImageGenerator):
         self.group_method   = config.group_method
         self.shuffle        = config.shuffle_groups
 
-        # Create transform generator
-        self.transform_parameters = config.transform_parameters
-        self.transform_generator = None
-        if config.allow_transform:
-            self.transform_generator = self._make_transform_generator(config)
-
         # Compute anchors variables
         self.anchor_sizes   = config.anchor_sizes
         self.anchor_strides = config.anchor_strides
@@ -56,12 +50,7 @@ class DetectionGenerator(ImageGenerator):
         self.compute_pyramid_feature_shapes_for_img_shape = \
             config.compute_pyramid_feature_shapes_for_img_shape
 
-        # Validate dataset
-        self._validate_dataset()
-
-        # Tools which helps order the data generated
-        self.lock = threading.Lock() # this is to allow for parrallel batch processing
-        self.group_index_generator = self._make_index_generator()
+        self._init(config)
 
 
     ###########################################################################

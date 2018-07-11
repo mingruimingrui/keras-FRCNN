@@ -24,18 +24,9 @@ class ImageGenerator(object):
 
         raise NotImplementedError('__init__ is not defined')
 
-        # Create transform generator
-        self.transform_parameters = config.transform_parameters
-        self.transform_generator = None
-        if config.allow_transform:
-            self.transform_generator = self._make_transform_generator(config)
+        # Ensure this line is also added to __init__
+        self._init(config)
 
-        # Validate dataset
-        self._validate_dataset()
-
-        # Tools which helps order the data generated
-        self.lock = threading.Lock() # this is to allow for parrallel batch processing
-        self.group_index_generator = self._make_index_generator()
 
     def _validate_dataset(self):
         """ Dataset validator which validates the suitability of the dataset """
@@ -67,6 +58,22 @@ class ImageGenerator(object):
 
     ###########################################################################
     #### This marks the start of helper functions
+
+    def _init(self, config):
+        # Create transform generator
+        self.transform_parameters = config.transform_parameters
+        self.transform_generator = None
+        if config.allow_transform:
+            self.transform_generator = self._make_transform_generator(config)
+
+        # Validate dataset
+        self._validate_dataset()
+
+        # Tools which helps order the data generated
+        self.lock = threading.Lock() # this is to allow for parrallel batch processing
+        self._group_image_ids()
+        self.group_index_generator = self._make_index_generator()
+
 
     def _make_transform_generator(self, config):
         return random_transform_generator(
@@ -135,9 +142,6 @@ class ImageGenerator(object):
 
     def _make_index_generator(self):
         """ Returns a generator which yields group index to train the model in """
-        # Initialize a grouping order
-        self._group_image_ids()
-
         # start group_index at -1 so that first group_index returned is 0
         num_groups = len(self.groups)
         group_index = -1

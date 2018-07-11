@@ -122,12 +122,6 @@ class DetectionGenerator(ImageGenerator):
             shapes_callback = self.compute_pyramid_feature_shapes_for_img_shape,
         )
 
-    def as_tf_generator(self):
-        """ Creates a generator which generates data in a format suitable for tf.data.Dataset.from_generator """
-        while True:
-            image_batch, (labels_batch, regression_batch) = self.next()
-            yield image_batch, labels_batch, regression_batch
-
 
     ###########################################################################
     #### This marks the start of _get_batches_of_transformed_samples helper functions

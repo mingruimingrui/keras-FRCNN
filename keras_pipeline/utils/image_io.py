@@ -9,8 +9,18 @@ import numpy as np
 from PIL import Image
 
 
-def read_image(path):
+def read_image_local(path):
     return np.asarray(Image.open(path).convert('RGB'))
+
+
+def read_image_url(url):
+    response = requests.get(url)
+    img = Image.open(BytesIO(response.content))
+    return np.asarray(img.convert('RGB'))
+
+
+def save_image(image, path):
+    Image.fromarray(image).save(path)
 
 
 ###############################################################################

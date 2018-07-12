@@ -1,2 +1,2 @@
 from ._misc import RedirectModel
-from .eval import EvaluateDetection
+from ._eval import EvaluateDetection

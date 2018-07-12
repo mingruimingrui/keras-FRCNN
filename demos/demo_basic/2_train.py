@@ -23,8 +23,7 @@ from dataset_pipeline import ImageDataset
 from keras_pipeline.generators import DetectionGeneratorConfig, DetectionGenerator
 
 # Evaluation callbacks
-from keras_pipeline.callbacks import RedirectModel
-from keras_pipeline.callbacks.eval import EvaluateDetection
+from keras_pipeline.callbacks import RedirectModel, EvaluateDetection
 
 
 def makedirs(path):

@@ -83,7 +83,18 @@ def log_training_config(args):
         logging.info('model_config_json_file : {}'.format(model_config_save_path))
 
 
-def load_model(model_name, model_config, snapshot=None, evaluation=False):
+def load_model(model_name, model_config, num_gpu=-1, snapshot=None, evaluation=False):
+    if num_gpu > 1:
+        with tf.device('/cpu:0'):
+            training_model, prediction_model = _load_model(model_name, model_config, snapshot=snapshot, evaluation=evaluation)
+        training_model = multi_gpu_model(training_model, gpus=num_gpu)
+    else:
+        training_model, prediction_model = _load_model(model_name, model_config, snapshot=snapshot, evaluation=evaluation)
+
+    return training_model, prediction_model
+
+
+def _load_model(model_name, model_config, snapshot=None, evaluation=False):
     logging.info('')
     logging.info('==================== Making Model ====================')
     logging.info('This can take a while')
@@ -264,6 +275,7 @@ def train_model(
     model_config,
     train_generator_config,
     job_name=None,
+    num_gpu=-1,
     epochs=50,
     steps_per_epoch=None,
     log_dir='./logs',
@@ -283,6 +295,7 @@ def train_model(
         train_generator_config : A generator config from keras_pipeline.generators containing the training set
         job_name               : The name of this training job (used to mark the output files)
 
+        num_gpu         : Number of gpus to train model on (-1 indicates to use default keras settings (max 1 GPU))
         epochs          : Number of epoch to train model on, default 50
         steps_per_epoch : Number of steps per epoch, default entire dataset
 
@@ -296,8 +309,6 @@ def train_model(
 
         snapshot      : h5 model file to resume training from
         initial_epoch : Epoch at which to start training
-
-        verbose : Verbose level as defined in https://keras.io/models/model/#fit_generator
 
         workers             : Number of workers to generate training data with
         use_multiprocessing : Use process based threading
@@ -316,7 +327,7 @@ def train_model(
     log_training_config(args=locals())
 
     # Load models and generators from config objects
-    training_model, prediction_model = load_model(model_name, model_config, snapshot, evaluation)
+    training_model, prediction_model = load_model(model_name, model_config, num_gpu, snapshot, evaluation)
     train_generator, validation_generator = load_generators(train_generator_config, val_generator_config)
 
     # Generate sample of input images
@@ -338,6 +349,7 @@ def train_model(
 
     logging.info('')
     logging.info('==================== Training Start ====================')
+    import pdb; pdb.set_trace()
 
     # Begin training
     training_model.fit_generator(
@@ -347,6 +359,8 @@ def train_model(
         verbose=0,
         callbacks=callbacks,
         initial_epoch=initial_epoch,
+        workers=workers,
+        use_multiprocessing=use_multiprocessing
     )
 
     logging.info('')

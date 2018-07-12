@@ -131,11 +131,11 @@ def load_generators(train_generator_config, val_generator_config):
         raise Exception('{} has not been implemented'.format(generator_config_name))
 
     train_generator = generator(train_generator_config)
-    validation_generator = None
+    val_generator = None
     if val_generator_config is not None:
-        validation_generator = generator(val_generator_config)
+        val_generator = generator(val_generator_config)
 
-    return train_generator, validation_generator
+    return train_generator, val_generator
 
 
 def log_sample_inputs(generator, log_dir=None):
@@ -202,7 +202,7 @@ def create_callback(
     snapshot_name='model_{epoch:02d}.h5',
     evaluation=False,
     prediction_model=None,
-    validation_generator=None
+    val_generator=None
 ):
     logging.info('')
     logging.info('==================== Making Callbacks ====================')
@@ -245,13 +245,13 @@ def create_callback(
         )
         callbacks.append(checkpoint)
 
-    if evaluation and prediction_model and validation_generator:
+    if evaluation and prediction_model and val_generator:
         from ..callbacks import RedirectModel
         if model_name == 'RetinaNet':
             from ..callbacks import EvaluateDetection as evaluate_fn
         else:
             raise Exception('So far only RetinaNet has been implemented')
-        evaluation = evaluate_fn(validation_generator, tensorboard=tensorboard_callback)
+        evaluation = evaluate_fn(val_generator, tensorboard=tensorboard_callback)
         evaluation = RedirectModel(evaluation, prediction_model)
         callbacks.append(evaluation)
 
@@ -304,8 +304,8 @@ def train_model(
         snapshot_path   : Directory to save model snapshots (set to None to not output)
         snapshot_name   : Name of snapshot files (follows https://keras.io/callbacks/#ModelCheckpoint)
 
-        evaluation           : Flag to perform evaluation at end of each epoch (uses validation set to evaluate)
-        val_generator_config : A generator config from keras_pipeline.generators containing the validation set (Not needed if not evaluating)
+        evaluation           : Flag to perform evaluation at end of each epoch (uses val set to evaluate)
+        val_generator_config : A generator config from keras_pipeline.generators containing the val set (Not needed if not evaluating)
 
         snapshot      : h5 model file to resume training from
         initial_epoch : Epoch at which to start training
@@ -328,7 +328,7 @@ def train_model(
 
     # Load models and generators from config objects
     training_model, prediction_model = load_model(model_name, model_config, num_gpu, snapshot, evaluation)
-    train_generator, validation_generator = load_generators(train_generator_config, val_generator_config)
+    train_generator, val_generator = load_generators(train_generator_config, val_generator_config)
 
     # Generate sample of input images
     log_sample_inputs(train_generator, log_dir)
@@ -344,7 +344,7 @@ def train_model(
         snapshot_name=snapshot_name,
         evaluation=evaluation,
         prediction_model=prediction_model,
-        validation_generator=validation_generator
+        val_generator=val_generator
     )
 
     logging.info('')

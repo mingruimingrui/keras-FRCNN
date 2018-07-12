@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import logging
 
 from dataset_pipeline import ImageDataset
 
@@ -81,8 +82,12 @@ def main():
     set_default_logging(os.path.join(args.log_dir, 'main.log'))
 
     # Load dataset API
+    logging.info('')
+    logging.info('==================== Loading Datasets ====================')
+    logging.info('This can take a while')
     train_set = ImageDataset(os.path.join(args.coco_path, 'annotations', 'pipeline_train2017.json'))
     val_set   = ImageDataset(os.path.join(args.coco_path, 'annotations', 'pipeline_val2017.json'))
+    logging.info('Datasets loaded')
 
     # Create model and generator config files
     model_config = RetinaNetConfig(num_classes=train_set.get_num_classes())
@@ -104,7 +109,7 @@ def main():
         model_config,
         train_generator_config,
         val_generator_config=val_generator_config,
-        num_gpu=args.num_gpu
+        num_gpu=args.num_gpu,
         epochs=50,
         steps_per_epoch=10000,
         log_dir=args.log_dir,

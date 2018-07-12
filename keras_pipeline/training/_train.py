@@ -349,7 +349,6 @@ def train_model(
 
     logging.info('')
     logging.info('==================== Training Start ====================')
-    import pdb; pdb.set_trace()
 
     # Begin training
     training_model.fit_generator(

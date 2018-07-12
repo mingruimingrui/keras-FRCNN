@@ -200,11 +200,6 @@ def parse_args(args):
         help='Perform evaluation per epoch',
         dest='evaluation', action='store_true')
 
-    # Additional parameters
-    parser.add_argument('--freeze-backbone',
-        help='Freeze training of backbone layers',
-        action='store_true')
-
     return parser.parse_args(args)
 
 

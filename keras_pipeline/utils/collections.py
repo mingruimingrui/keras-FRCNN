@@ -1,6 +1,6 @@
 
-
 class AttrDict(dict):
+    """ Attribute dictionary which allows parameters to become immutable """
 
     IMMUTABLE = '__immutable__'
 

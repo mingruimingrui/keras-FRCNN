@@ -75,21 +75,21 @@ class ImageClassGeneratorConfig(ConfigTemplate):
         self.add(
             'max_rotation',
             'The maximum rotation in radians for transform as scalar',
-            default = -0.1,
+            default = 0.1,
             accepted_types = 'numeric'
         )
 
         self.add(
             'min_translation',
             'The minimum translation as 2D column vector',
-            default = (0, 0),
+            default = (-0.1, -0.1),
             accepted_types = 'list-like'
         )
 
         self.add(
             'max_translation',
             'The maximum translation as 2D column vector',
-            default = (0, 0),
+            default = (0.1, 0.1),
             accepted_types = 'list-like'
         )
 
